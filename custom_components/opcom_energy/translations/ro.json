@@ -1,0 +1,133 @@
+{
+  "title": "OPCOM Energy",
+  "config": {
+    "step": {
+      "user": {
+        "title": "OPCOM Energy",
+        "description": "Preia prețurile PZU direct de la OPCOM. Nu este necesar un cont sau o cheie API. Prețurile sunt angro în RON/kWh, fără tarifele furnizorului sau taxe. Formulele opționale se configurează după instalare."
+      }
+    },
+    "error": {
+      "cannot_connect": "Nu se poate accesa OPCOM. Încearcă mai târziu.",
+      "invalid_data": "OPCOM nu a returnat un program complet și valid pentru azi."
+    },
+    "abort": {
+      "already_configured": "OPCOM Energy este deja configurat."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opțiuni tarif și planificare",
+        "description": "Fiecare tarif: preț spot RON/kWh × multiplicator + adaos. Implicit este prețul angro. Introdu parametrii contractului; taxele nu sunt presupuse. Ferestrele folosesc formula de import; percentila folosește prețul spot.",
+        "data": {
+          "import_adder": "Adaos import (RON/kWh)",
+          "import_multiplier": "Multiplicator import",
+          "export_adder": "Adaos export (RON/kWh)",
+          "export_multiplier": "Multiplicator export",
+          "cheap_threshold": "Prag preț import (RON/kWh)",
+          "cheap_percentile": "Prag percentilă pentru preț mic (%)",
+          "window_minutes": "Durata ferestrei (minute, multiplu de 15)"
+        }
+      }
+    },
+    "error": {
+      "invalid_options": "Folosește numere finite, multiplicatori 0–100, percentilă 0–100 și o fereastră de 15–1440 minute divizibilă cu 15."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "spot_price": {
+        "name": "Preț spot"
+      },
+      "next_spot_price": {
+        "name": "Preț spot următor"
+      },
+      "import_price": {
+        "name": "Preț estimat de import"
+      },
+      "export_price": {
+        "name": "Preț estimat de export"
+      },
+      "today_average": {
+        "name": "Media de azi"
+      },
+      "today_min": {
+        "name": "Minimul de azi"
+      },
+      "today_max": {
+        "name": "Maximul de azi"
+      },
+      "tomorrow_average": {
+        "name": "Media de mâine"
+      },
+      "cheapest_window_price": {
+        "name": "Prețul celei mai ieftine ferestre viitoare"
+      },
+      "cheapest_window_start": {
+        "name": "Începutul celei mai ieftine ferestre viitoare"
+      },
+      "spot_price_mwh": {
+        "name": "Preț spot pe MWh"
+      },
+      "price_percentile": {
+        "name": "Percentila prețului"
+      },
+      "last_successful_fetch": {
+        "name": "Ultima descărcare reușită"
+      }
+    },
+    "binary_sensor": {
+      "cheap_now": {
+        "name": "Preț mic acum"
+      },
+      "below_threshold": {
+        "name": "Preț import sub prag"
+      },
+      "tomorrow_available": {
+        "name": "Programul de mâine este complet"
+      },
+      "source_available": {
+        "name": "Sursă disponibilă"
+      }
+    }
+  },
+  "services": {
+    "get_prices": {
+      "name": "Preia prețurile",
+      "description": "Returnează intervalele publicate pentru o zi locală din cache; indică explicit dacă sunt complete. Nu descarcă date noi.",
+      "fields": {
+        "date": {
+          "name": "Data (AAAA-LL-ZZ)",
+          "description": "Data (AAAA-LL-ZZ)"
+        },
+        "price_type": {
+          "name": "Tip preț",
+          "description": "Tip preț"
+        }
+      }
+    },
+    "get_cheapest_window": {
+      "name": "Găsește cea mai ieftină fereastră",
+      "description": "Găsește cea mai ieftină fereastră viitoare continuă din prețurile publicate.",
+      "fields": {
+        "earliest_start": {
+          "name": "Început minim (dată ISO cu fus orar)",
+          "description": "Început minim (dată ISO cu fus orar)"
+        },
+        "latest_end": {
+          "name": "Sfârșit maxim (dată ISO cu fus orar)",
+          "description": "Sfârșit maxim (dată ISO cu fus orar)"
+        },
+        "duration_minutes": {
+          "name": "Durata în minute",
+          "description": "Durata în minute"
+        },
+        "price_type": {
+          "name": "Tip preț",
+          "description": "Tip preț"
+        }
+      }
+    }
+  }
+}

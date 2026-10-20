@@ -1,0 +1,14 @@
+{
+  "domain": "opcom_energy",
+  "name": "OPCOM Energy",
+  "codeowners": [
+    "@gaspareduard"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/gaspareduard/ha-opcom",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/gaspareduard/ha-opcom/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

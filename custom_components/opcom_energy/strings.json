@@ -1,0 +1,133 @@
+{
+  "title": "OPCOM Energy",
+  "config": {
+    "step": {
+      "user": {
+        "title": "OPCOM Energy",
+        "description": "Get Romanian day-ahead prices directly from OPCOM. No account or API key is required. Prices are wholesale RON/kWh, without supplier charges or taxes. Configure optional tariff formulas after setup."
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot reach OPCOM. Try again later.",
+      "invalid_data": "OPCOM did not return a complete valid schedule for today."
+    },
+    "abort": {
+      "already_configured": "OPCOM Energy is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tariff and planning options",
+        "description": "Each tariff is: spot RON/kWh × multiplier + adder. Defaults equal wholesale spot prices. Enter your own contract parameters; taxes and fees are never assumed. Cheapest windows use the import formula; cheap percentile uses spot prices.",
+        "data": {
+          "import_adder": "Import adder (RON/kWh)",
+          "import_multiplier": "Import multiplier",
+          "export_adder": "Export adder (RON/kWh)",
+          "export_multiplier": "Export multiplier",
+          "cheap_threshold": "Import price threshold (RON/kWh)",
+          "cheap_percentile": "Cheap percentile threshold (%)",
+          "window_minutes": "Planning window duration (minutes, multiple of 15)"
+        }
+      }
+    },
+    "error": {
+      "invalid_options": "Use finite numbers, multipliers 0–100, percentile 0–100, and a window of 15–1440 minutes divisible by 15."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "spot_price": {
+        "name": "Spot price"
+      },
+      "next_spot_price": {
+        "name": "Next spot price"
+      },
+      "import_price": {
+        "name": "Estimated import price"
+      },
+      "export_price": {
+        "name": "Estimated export price"
+      },
+      "today_average": {
+        "name": "Today average"
+      },
+      "today_min": {
+        "name": "Today minimum"
+      },
+      "today_max": {
+        "name": "Today maximum"
+      },
+      "tomorrow_average": {
+        "name": "Tomorrow average"
+      },
+      "cheapest_window_price": {
+        "name": "Cheapest future window price"
+      },
+      "cheapest_window_start": {
+        "name": "Cheapest future window start"
+      },
+      "spot_price_mwh": {
+        "name": "Spot price per MWh"
+      },
+      "price_percentile": {
+        "name": "Price percentile"
+      },
+      "last_successful_fetch": {
+        "name": "Last successful fetch"
+      }
+    },
+    "binary_sensor": {
+      "cheap_now": {
+        "name": "Cheap now"
+      },
+      "below_threshold": {
+        "name": "Import price below threshold"
+      },
+      "tomorrow_available": {
+        "name": "Tomorrow schedule complete"
+      },
+      "source_available": {
+        "name": "Source available"
+      }
+    }
+  },
+  "services": {
+    "get_prices": {
+      "name": "Get prices",
+      "description": "Return cached published intervals for a local calendar day; completeness is explicit. No network request is made.",
+      "fields": {
+        "date": {
+          "name": "Date (YYYY-MM-DD)",
+          "description": "Date (YYYY-MM-DD)"
+        },
+        "price_type": {
+          "name": "Price type",
+          "description": "Price type"
+        }
+      }
+    },
+    "get_cheapest_window": {
+      "name": "Get cheapest window",
+      "description": "Find the globally cheapest contiguous future window among published prices.",
+      "fields": {
+        "earliest_start": {
+          "name": "Earliest start (ISO timestamp with offset)",
+          "description": "Earliest start (ISO timestamp with offset)"
+        },
+        "latest_end": {
+          "name": "Latest end (ISO timestamp with offset)",
+          "description": "Latest end (ISO timestamp with offset)"
+        },
+        "duration_minutes": {
+          "name": "Duration in minutes",
+          "description": "Duration in minutes"
+        },
+        "price_type": {
+          "name": "Price type",
+          "description": "Price type"
+        }
+      }
+    }
+  }
+}

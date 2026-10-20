@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a pricing, setup or planning problem.
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: Home Assistant and OPCOM Energy versions
+    validations:
+      required: true
+  - type: input
+    id: timezone
+    attributes:
+      label: Home Assistant timezone and affected market/local date
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Expected and observed behavior
+      description: Include steps to reproduce. Do not include tokens or private backups.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics and relevant logs
+      description: Download diagnostics from the integration page. Review before sharing.

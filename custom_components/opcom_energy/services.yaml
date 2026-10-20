@@ -1,0 +1,41 @@
+get_prices:
+  fields:
+    date:
+      example: "2026-10-20"
+      selector:
+        date:
+    price_type:
+      default: spot
+      selector:
+        select:
+          options:
+            - spot
+            - import
+            - export
+get_cheapest_window:
+  fields:
+    earliest_start:
+      example: "2026-10-20T18:00:00+03:00"
+      selector:
+        text:
+    latest_end:
+      example: "2026-10-21T08:00:00+03:00"
+      selector:
+        text:
+    duration_minutes:
+      example: 120
+      selector:
+        number:
+          min: 15
+          max: 1440
+          step: 15
+          unit_of_measurement: min
+          mode: box
+    price_type:
+      default: spot
+      selector:
+        select:
+          options:
+            - spot
+            - import
+            - export
