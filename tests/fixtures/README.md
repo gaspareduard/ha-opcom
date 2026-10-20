@@ -1,6 +1,6 @@
 # Public factual OPCOM CSV fixtures
 
-Fetched directly from OPCOM's public export on 2026-10-20. Files contain wholesale market prices and volumes, not account information. They are test data, not forecasts or sample retail tariffs.
+Fetched directly from OPCOM's public export on 2026-10-20. Files contain wholesale market prices and volumes, not account information. They are test data, not forecasts or sample retail tariffs. CSV line endings are normalized to LF.
 
 - `2026-10-20.csv`: regular day, 96 PT15M intervals.
 - `2026-10-21.csv`: published next market day, 96 intervals.

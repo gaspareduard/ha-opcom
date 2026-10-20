@@ -259,3 +259,27 @@ async def test_romanian_calendar_day(hass, fetch, csv_text):
     assert response["complete"] is True
     assert response["prices"][0]["start"] == "2026-10-19T21:00:00+00:00"
     assert response["prices"][-1]["end"] == "2026-10-20T21:00:00+00:00"
+
+
+@pytest.mark.parametrize(
+    ("first", "second", "count"),
+    [
+        ("2025-10-26T00:15:00+00:00", "2025-10-26T01:15:00+00:00", 100),
+        ("2026-03-29T00:45:00+00:00", "2026-03-29T01:00:00+00:00", 92),
+    ],
+)
+async def test_ha_clock_across_dst(hass, fetch, freezer, first, second, count):
+    freezer.move_to(first)
+    await setup(hass)
+    before = find(hass, "spot_price").attributes["start"]
+    freezer.move_to(second)
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    after = find(hass, "spot_price").attributes["start"]
+    assert before == first
+    assert after == second
+    response = await hass.services.async_call(
+        DOMAIN, "get_prices", {}, blocking=True, return_response=True
+    )
+    assert response["complete"] is True
+    assert len(response["prices"]) == count
