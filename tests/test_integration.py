@@ -38,8 +38,10 @@ def fetch(csv_text):
         yield mock
 
 
-async def setup(hass):
-    entry = MockConfigEntry(domain=DOMAIN, title="OPCOM Energy", unique_id=DOMAIN, data={})
+async def setup(hass, options=None):
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="OPCOM Energy", unique_id=DOMAIN, data={}, options=options or {}
+    )
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -283,3 +285,76 @@ async def test_ha_clock_across_dst(hass, fetch, freezer, first, second, count):
     )
     assert response["complete"] is True
     assert len(response["prices"]) == count
+
+
+async def test_schedules_keep_wholesale_units_with_tariff_adjustments(hass, fetch, csv_text):
+    async def load(day):
+        return csv_text(day.isoformat()).replace('"1565.25"', '"-100.00"')
+
+    fetch.side_effect = load
+    await setup(hass, {"import_multiplier": 1.21, "import_adder": 0.35})
+    for suffix, day in (("today_average", "2026-10-20"), ("tomorrow_average", "2026-10-21")):
+        schedule = find(hass, suffix)
+        response = await hass.services.async_call(
+            DOMAIN, "get_prices", {"date": day}, blocking=True, return_response=True
+        )
+        assert schedule.attributes["prices"] == response["prices"]
+        assert float(schedule.state) == pytest.approx(
+            sum(row["price"] for row in response["prices"]) / len(response["prices"])
+        )
+    assert find(hass, "today_average").attributes["prices"][0]["price"] == -0.1
+    spot = find(hass, "spot_price")
+    imported = find(hass, "estimated_import_price")
+    assert float(imported.state) == pytest.approx(float(spot.state) * 1.21 + 0.35)
+    assert imported.attributes["start"] == spot.attributes["start"]
+    assert imported.attributes["end"] == spot.attributes["end"]
+
+
+@pytest.mark.parametrize(("suffix", "select"), [("today_minimum", min), ("today_maximum", max)])
+async def test_extreme_value_matches_interval_metadata(hass, fetch, suffix, select):
+    await setup(hass)
+    schedule = find(hass, "today_average").attributes["prices"]
+    expected = select(schedule, key=lambda row: row["price"])
+    extreme = find(hass, suffix)
+    assert float(extreme.state) == expected["price"]
+    assert extreme.attributes["start"] == expected["start"]
+    assert extreme.attributes["end"] == expected["end"]
+
+
+async def test_next_price_rolls_over_with_its_metadata(hass, fetch, freezer):
+    freezer.move_to("2026-10-20T21:45:00+00:00")
+    await setup(hass)
+    following = find(hass, "next_spot_price")
+    first_tomorrow = find(hass, "tomorrow_average").attributes["prices"][0]
+    assert float(following.state) == first_tomorrow["price"]
+    assert following.attributes["start"] == first_tomorrow["start"]
+    assert following.attributes["end"] == first_tomorrow["end"]
+    freezer.move_to("2026-10-20T22:00:00+00:00")
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    current = find(hass, "spot_price")
+    assert current.state == following.state
+    assert current.attributes["start"] == following.attributes["start"]
+    assert current.attributes["end"] == following.attributes["end"]
+
+
+async def test_sensor_properties_share_a_reading_until_next_update(hass, fetch, freezer):
+    from homeassistant.helpers.entity_platform import async_get_platforms
+
+    await setup(hass)
+    entity = next(
+        entity
+        for platform in async_get_platforms(hass, DOMAIN)
+        for entity in platform.entities.values()
+        if entity.entity_id == "sensor.opcom_energy_spot_price"
+    )
+    value = entity.native_value
+    attrs = dict(entity.extra_state_attributes)
+    # A clock crossing between property reads must not mix old and new intervals.
+    freezer.move_to("2026-10-20T12:15:00+00:00")
+    assert entity.native_value == value
+    assert entity.extra_state_attributes == attrs
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    assert entity.extra_state_attributes["start"] == "2026-10-20T12:15:00+00:00"
+    assert float(entity.native_value) == float(find(hass, "spot_price").state)

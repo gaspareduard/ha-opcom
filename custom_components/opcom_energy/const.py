@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 DOMAIN = "opcom_energy"
 NAME = "OPCOM Energy"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 MARKET_TZ = ZoneInfo("Europe/Berlin")
 SLOT_LENGTH = timedelta(minutes=15)
 SOURCE_URL = "https://www.opcom.ro"

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- Use the shared price conversion helper for every published daily schedule.
+- Resolve each sensor value and its interval metadata together once per coordinator or quarter-hour update.
+- Add regression coverage for negative schedule prices, tariff independence, min/max metadata, next-day rollover and consistent property reads.
+
 ## 1.0.0
 
 - Direct asynchronous OPCOM PT15M retrieval, with strict complete-day validation.
