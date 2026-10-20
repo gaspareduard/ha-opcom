@@ -1,159 +1,142 @@
-# OPCOM Energy for Home Assistant
+# OPCOM Energy — prețuri OPCOM și tarife YellowGrid pentru Home Assistant
 
-[![Validate](https://github.com/gaspareduard/ha-opcom/actions/workflows/validate.yaml/badge.svg)](https://github.com/gaspareduard/ha-opcom/actions/workflows/validate.yaml)
-[![Release](https://img.shields.io/github/v/release/gaspareduard/ha-opcom)](https://github.com/gaspareduard/ha-opcom/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Validare](https://github.com/gaspareduard/ha-opcom/actions/workflows/validate.yaml/badge.svg)](https://github.com/gaspareduard/ha-opcom/actions/workflows/validate.yaml)
+[![Versiune](https://img.shields.io/github/v/release/gaspareduard/ha-opcom)](https://github.com/gaspareduard/ha-opcom/releases)
+[![Licență MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-<img src="custom_components/opcom_energy/brand/icon.png" alt="OPCOM Energy chart and lightning icon" width="96">
+<img src="custom_components/opcom_energy/brand/icon.png" alt="Grafic de prețuri și simbol electric OPCOM Energy" width="96">
 
-Romanian day-ahead electricity prices, fetched directly from **OPCOM PZU**, with price sensors, local-day schedules and cheapest-window planning. Free to use and modify. No account, activation key, telemetry or license server.
+Prețuri PZU din România, descărcate direct de la **OPCOM**, cu senzori pentru import/export, tarife editabile și planificarea celor mai ieftine intervale. Documentația principală este în română; [English documentation](README.en.md) este disponibilă separat.
 
-**Requires Home Assistant 2026.10.0 or newer.** This is an independent community project, unaffiliated with OPCOM. Internet is required to obtain new schedules. [Română](README.ro.md).
+**Necesită Home Assistant 2026.10.0 sau mai nou.** Gratuită, cu licență MIT, fără cont, activare, telemetrie sau server de licențiere. Proiect independent, neafiliat OPCOM sau YellowGrid.
 
-## Install with HACS
+## Instalare prin HACS
 
-[![Open your Home Assistant instance and open this repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=gaspareduard&repository=ha-opcom&category=integration)
+[![Deschide integrarea în HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=gaspareduard&repository=ha-opcom&category=integration)
 
-1. Open **HACS → ⋮ → Custom repositories**.
-2. Add `https://github.com/gaspareduard/ha-opcom`, category **Integration**.
-3. Find **OPCOM Energy**, download it, then restart Home Assistant.
-4. Open **Settings → Devices & services → Add integration → OPCOM Energy**.
-5. Open **Configure → Simple settings and planning** for the original formulas. For optional invoice-style pricing, use **Tariff versions and components**, then **Import pricing mode → Components**.
+1. Deschide **HACS → ⋮ → Custom repositories**.
+2. Adaugă `https://github.com/gaspareduard/ha-opcom`, categoria **Integration**.
+3. Descarcă **OPCOM Energy** și repornește Home Assistant.
+4. Deschide **Setări → Dispozitive și servicii → Adaugă integrare → OPCOM Energy**.
+5. Configurează tariful prin **Configurează**. Într-o interfață HA în engleză, butoanele se numesc **Settings → Devices & services → Configure**.
 
-Anyone can install through this public custom repository. Default-directory listing is a separate HACS review process; the custom-repository link works independently of that review.
+Repository-ul personalizat HACS este public și poate fi folosit imediat. Includerea în catalogul implicit HACS este un proces separat. Pentru instalare manuală, copiază `custom_components/opcom_energy` în directorul `custom_components` al HA, apoi repornește și adaugă integrarea din interfață.
 
-For manual installation, copy `custom_components/opcom_energy` into your HA `config/custom_components/` directory, restart, and add the integration through the UI. No YAML configuration is required. The domain `opcom_energy` allows coexistence with other OPCOM integrations; it does not migrate their entities or settings.
+Identificatorul integrării este `opcom_energy`. Poate coexista cu alte integrări OPCOM, fără migrarea automată a entităților lor.
 
-## What you get
+## Configurare YellowGrid
 
-| Sensor | Meaning |
+Începând cu v1.2.2, sunt disponibile modelul YellowGrid cu plafon și prag minim, precum și descărcări OPCOM fără reutilizarea cookie-urilor care pot provoca erori HTTP 403.
+
+1. Deschide **Configurează → Versiuni tarifare și componente → Adaugă versiune tarifară**.
+2. Alege explicit **data de început** și presetul **YellowGrid — estimare grafic 20 octombrie (editabil)**. În interfața engleză: **Tariff versions and components → Add tariff version → YellowGrid — 20 October chart estimate (editable)**.
+3. Verifică parametrii de mai jos, apoi tarifele de rețea și TVA pentru fiecare componentă.
+4. Alege **Salvează versiunea**. Redeschide configurarea și selectează **Modul de calcul al importului → Componente**; în engleză, **Import pricing mode → Components**.
+5. Activează **Preț estimat export / Estimated export price** din lista entităților integrării: senzorul este dezactivat implicit.
+
+| Parametru | Valoare inițială | Semnificație |
+| --- | ---: | --- |
+| Plafon final import | `1.31` lei/kWh | Limita totalului, după tarife și TVA |
+| Prag minim export | `0.50` lei/kWh | Limita inferioară a prețului de export |
+| Comision furnizor | `25` % | Folosit în modelul de import și export |
+| Plafon energie importată înainte de TVA | `0.55` lei/kWh | Parametru separat al componentei de energie |
+| Multiplicator / adaos energie | `1` / `0` | Ajustări înainte de TVA |
+| TVA energie | `21` % | Editabil; componentele au fiecare propriul TVA |
+
+**Plafonul de 1,31 se aplică prețului final, nu prețului OPCOM angro.** Pragul de 0,50 este un minim de export; prețul poate fi mai mare. La setările inițiale, exportul peste prag este `0.75 × OPCOM + 0.125` lei/kWh.
+
+Presetul pentru grafic include o componentă **Distribuție Delgaz (estimare grafic)**, editabilă și neconfirmată pentru contractul utilizatorului. Un grafic plafonat nu identifică operatorul de distribuție. Presetul separat **factură septembrie 2026** păstrează ratele exemplului de factură. Verifică operatorul, tarifele și TVA aplicabile contractului; **TVA CfD rămâne marcat neverificat**.
+
+Toate versiunile încep la **miezul nopții în fusul orar HA**, de exemplu `Europe/Bucharest`. Intervalele fără o versiune aplicabilă au preț estimat indisponibil. Datele OPCOM angro rămân separate. Pentru modificări viitoare, adaugă o versiune cu data nouă, păstrând perioadele anterioare.
+
+Versiunile salvate în v1.2.0 nu primesc automat plafonul final: editează versiunea, setează **Final import cap, including charges and VAT** la `1.31` și salvează. Actualizările păstrează setările existente.
+
+[Ghid complet: tarife, formule, TVA și date de intrare în vigoare](docs/tariffs.md).
+
+## Senzori disponibili
+
+| Senzor | Ce afișează |
 | --- | --- |
-| Spot price | Current quarter-hour wholesale price, RON/kWh |
-| Next spot price | Immediately following published quarter-hour |
-| Estimated import price | Your configured import formula, RON/kWh |
-| Import base energy before VAT / additional charges before VAT / VAT amount | Current component-mode price breakdown; unavailable in simple mode |
-| Estimated export price | Your configured export formula; disabled by default |
-| Today average / minimum / maximum | Spot statistics for a complete HA-local calendar day |
-| Tomorrow average | Spot average and full schedule; unavailable until the local day is complete |
-| Price percentile | Percentage of other intervals strictly cheaper than now |
-| Cheapest future window price / start | Best contiguous future import-price window within the next 48 hours of published data |
-| Spot price per MWh | Original wholesale unit; disabled by default |
-| Last successful fetch | Last successful market-day download |
+| Preț spot / următorul preț spot | OPCOM angro în lei/kWh, fără ajustările furnizorului |
+| Preț estimat import | Totalul calculat cu tarifele și plafonul configurate |
+| Preț estimat export | Estimarea cu propriul comision și prag minim |
+| Energie importată / tarife suplimentare / TVA | Defalcarea importului, disponibilă în modul Componente |
+| Media / minimul / maximul de astăzi | Statistici OPCOM pentru ziua locală completă |
+| Media de mâine | Statistici și programul publicat pentru ziua locală următoare |
+| Percentila prețului | Poziția prețului spot curent în programul zilei |
+| Cea mai ieftină fereastră viitoare | Începutul și prețul mediu al ferestrei continue de import |
+| Ultima descărcare reușită | Diagnostic al sursei de date |
 
-| Binary sensor | Meaning |
-| --- | --- |
-| Cheap now | Spot percentile is at or below the configured threshold, default 25% |
-| Import price below threshold | Estimated import price is at or below your absolute threshold |
-| Tomorrow schedule complete | All intervals covering tomorrow in the HA timezone are known |
-| Source available | The current market day is cached and has no recorded fetch error; this is not a continuous connectivity probe |
+Senzorii binari indică disponibilitatea sursei, publicarea completă pentru mâine, prețul sub pragul configurat și intervalele ieftine după percentila spot. Prețul în lei/MWh este disponibil ca entitate dezactivată implicit.
 
-Names are translated into English/Romanian. Entity IDs are generated by Home Assistant and can vary with language and existing entities. Choose them from your installation's entity picker.
+Numele entităților urmează limba HA. ID-urile efective pot diferi: alege-le din lista entităților, în loc să presupui că un exemplu are aceleași ID-uri în orice instalare.
 
-The average sensors carry a `prices` attribute with ordered `{start, end, price}` records. Prices there are wholesale RON/kWh. Timestamps include UTC offsets; convert them for presentation, never key a schedule only by `HH:MM`. Min/max sensors expose their interval start/end. Planning sensors expose the selected start/end, duration and average price.
+## Dashboard: bare YellowGrid și linie OPCOM
 
-## Simple-mode contract formulas
+Exemplul [Prețuri OPCOM](examples/dashboard/README.md) afișează:
 
-OPCOM publishes **wholesale** prices. These are not automatically your electricity bill or export compensation.
+- prețurile curente de import, export și OPCOM angro;
+- grafice separate **Astăzi** și **Mâine**, cu import/export ca bare și OPCOM ca linie;
+- orele locale, starea publicării și intervalele de 15 minute;
+- datele calculate de integrare, inclusiv versiunile tarifare viitoare, fără duplicarea formulelor în grafic.
+
+Dashboardul este opțional și se instalează separat, cu **ApexCharts Card**. Nu este creat automat de instalarea integrării prin HACS. [Fișiere și instrucțiuni](examples/dashboard/README.md).
+
+## Modul simplu
+
+Modul **Simplu** rămâne implicit și păstrează formulele originale:
 
 ```text
-spot_ron_kwh   = opcom_ron_mwh / 1000
-import_price  = spot_ron_kwh × import_multiplier + import_adder
-export_price  = spot_ron_kwh × export_multiplier + export_adder
+spot = OPCOM lei/MWh / 1000
+import = spot × multiplicator_import + adaos_import
+export = spot × multiplicator_export + adaos_export
 ```
 
-Defaults are multiplier `1` and adder `0`, so both formulas initially equal wholesale spot. All adders are **RON/kWh**. Nothing automatically includes VAT, distribution, transmission, supplier margin, caps or monthly fees. Enter the final multiplier and adder matching your contract. For example, if VAT applies to both spot and a fee, include it in both the multiplier and the final adder. Fixed subscription charges do not belong in a per-kWh adder unless you deliberately allocate them.
+Implicit, multiplicatorii sunt 1 și adaosurile 0: prețurile sunt angro. Modul simplu nu adaugă automat TVA, tarife, plafonul YellowGrid sau pragul de export. Schimbarea modului nu șterge versiunile tarifare salvate.
 
-Negative market prices remain negative. A negative spot price does not necessarily make your final import price negative. A fixed-price contract does not become dynamic by installing this integration. Battery losses, wear, solar forecasts and equipment limits are not included in the price-only planner.
-
-## Optional invoice-based tariffs (v1.1)
-
-Simple mode remains the default and preserves all existing settings and results. **Components** is a separate opt-in import-pricing mode with independent before-VAT energy settings; existing simple-mode multiplier/adder values are never copied into it.
-
-1. Open **Configure → Tariff versions and components → Add tariff version**.
-2. Choose an **effective start date** and either **Empty** or **September 2026 invoice (editable)** as starting values.
-3. Set the before-VAT energy multiplier, energy adder and energy VAT percentage. Defaults are `1`, `0`, and `21%`.
-4. Edit/add/remove components as needed, then choose **Save tariff**. Amounts are RON/kWh **before VAT**; each component has its own VAT percentage, enabled flag and VAT-verification flag.
-5. Open Configure again and select **Import pricing mode → Components**.
-
-```text
-base energy = spot_ron_kwh × energy_multiplier + energy_adder
-additional charges = sum(enabled component rates)
-VAT = base-energy VAT + sum(enabled component VAT amounts)
-estimated import total = base energy + additional charges + VAT
-```
-
-A version starts at **midnight in your HA timezone**. Each price interval uses the version active at its start, including published future intervals. A version continues until the next version begins. Add future versions to schedule changes without replacing earlier settings. Without a version covering an interval, its import total and threshold signal are unavailable; raw OPCOM and export prices still work. Import planning cannot bridge uncovered intervals.
-
-The invoice starting values total **0.4648832 RON/kWh before VAT**. They are an editable September 2026 example, not a universal or automatically updated YellowGrid tariff. VAT starts at an editable 21%; **CfD VAT is marked unverified**. A rounded zero VAT amount on an invoice does not prove exemption. Check the rules applicable to your contract. Supplier-specific caps, floors and commission models are not implemented; these are estimates, not guaranteed invoice matches.
-
-Three additional sensors expose the current base energy before VAT, additional charges before VAT and VAT amount. The existing estimated import sensor exposes the total, selected effective date, named component details and unverified VAT assumptions in its attributes. The `get_prices` action includes the same breakdown for each component-mode import interval. See [the tariff guide](docs/tariffs.md) for configuration, examples and missing-coverage behavior.
-
-## Actions and structured responses
-
-Two read-only actions use validated cached data. Both require response capture in scripts (`response_variable`) or **Tools → Actions** (called Developer Tools in older HA versions). They never command equipment or initiate extra downloads.
-
-Fetch the current local day's published intervals, with optional `date` (`YYYY-MM-DD`) and `price_type` (`spot`, `import`, `export`):
+## Acțiuni pentru programe și planificare
 
 ```yaml
 action: opcom_energy.get_prices
 data:
+  date: "2026-10-20"
   price_type: import
-response_variable: opcom_prices
+response_variable: preturi
 ```
 
-Response: `date`, `timezone`, `currency`, `unit`, `price_type`, `complete`, and `prices`. An unpublished or out-of-cache day returns an empty or partial list with `complete: false`. In component-mode import responses, intervals without a tariff have `price: null` and `unavailable_reason: no_tariff`; `complete` is false. Covered import intervals also include a `breakdown` object. Check completeness before interpreting the result as a whole-day schedule.
-
-Find a globally cheapest contiguous window:
+Acțiunea returnează intervalele din cache, cu marcaje temporale complete, unitate, monedă și `complete`. Tipul poate fi `spot`, `import` sau `export`; implicit este `spot`. Pentru importul pe componente, fiecare interval include `breakdown`. Lipsa acoperirii tarifare produce `price: null` și `unavailable_reason: no_tariff`; verifică întotdeauna `complete` și valorile nule.
 
 ```yaml
 action: opcom_energy.get_cheapest_window
 data:
   duration_minutes: 120
   price_type: import
-response_variable: charging_window
+response_variable: fereastra
 ```
 
-Optional `earliest_start` and `latest_end` accept ISO timestamps **with offsets**, for example `2026-10-21T08:00:00+03:00`. Start must be in the future; the search range is limited to 72 hours. Defaults are now to now + 48 hours. Duration must be 15–1440 minutes, divisible by 15. The result contains `start`, `end`, `average_price`, `unit`, `price_type` and `duration_minutes`.
+Durata acceptată este 15–1440 minute, în multipli de 15. Opțional, `earliest_start` și `latest_end` sunt marcaje ISO cu fus orar; căutarea este limitată la 72 de ore. Fereastra trebuie să fie continuă și completă. La egalitate este aleasă prima. Senzorii de planificare folosesc importul; acțiunea folosește implicit spotul dacă nu specifici tipul.
 
-Windows use complete, not-yet-started quarter-hours; they never bridge a missing interval. Earliest start wins equal-price ties. An action error means no published window fits. The built-in planning sensors use the **import** formula; the action defaults to **spot** unless specified. A calculated start time is a recommendation, not a reservation: save it in your own scheduling workflow if you need it to remain fixed as time advances.
+Acțiunile citesc date validate deja disponibile. Integrarea nu comandă baterii sau consumatori și nu include pierderile bateriei, degradarea ori prognoza solară în optimizare.
 
-## Time, publication and outages
+## Fus orar, publicare și întreruperi
 
-- OPCOM's market day follows CET/CEST (`Europe/Berlin`). HA-local today/tomorrow are assembled from all intersecting market days. In Romania, a market day starts at 01:00 local time.
-- UTC arithmetic preserves all 92, 96 or 100 quarter-hours on clock-change days. Both occurrences of an autumn repeated hour have distinct timestamps.
-- New/missing market days are checked on a 5-minute coordinator cycle. Per-day retry backoff grows from 5 to 60 minutes. Published days are rechecked every 6 hours for revisions.
-- A separate quarter-hour clock updates sensor states without making network requests. Multiple entities share one set of downloads.
-- Complete validated CSVs persist across restarts. A transient failure does not erase an already published schedule. A cached price remains usable only within its original interval.
-- If the current price is absent, price-dependent sensors are unavailable. Failed first setup without usable cache is retried by Home Assistant. Tomorrow being unpublished is normal and does not disable today's prices.
-- “Tomorrow complete” can remain off even after the next market day is published if that market day does not cover all of the HA-local tomorrow. Completeness is based on timestamps, never a guessed publication time.
+Ziua de piață OPCOM urmează CET/CEST (`Europe/Berlin`). Zilele afișate în HA sunt asamblate în fusul orar configurat în HA. În România, ziua de piață începe la 01:00 local. Schimbarea orei păstrează corect toate cele 92/96/100 de intervale distincte.
 
-## Dashboard and Energy
+Senzorii se actualizează la fiecare sfert de oră. Descărcările sunt partajate între entități; zilele lipsă sunt reîncercate cu pauze progresive. Datele publicate sunt reverificate periodic și păstrate prin stocarea administrată de HA. O conexiune întreruptă nu extinde prețul unui interval expirat. „Mâine complet” se activează numai când este acoperită întreaga zi locală.
 
-Add the spot/import price sensors to an Entities card and a History graph through the dashboard UI. For a future-price chart, use the `prices` attribute or the `get_prices` action; each record already has a full timestamp. Configure the estimated import sensor as the current price in Energy only if its formula matches your actual contract.
+## Diagnosticare și dezvoltare
 
-The full schedule attributes may enlarge recorder history. If this matters, exclude the two average/schedule entities using your existing recorder configuration workflow; keep the current-price sensors recorded for historical charts.
-
-## Troubleshooting and removal
-
-Use **Settings → Devices & services → OPCOM Energy → Download diagnostics**. Diagnostics include public market-day counts, fetch status, timezone and configured tariff numbers, without account credentials or HA identifiers. Enable debug logging from the integration menu when reporting a fetch problem. OPCOM HTML/error pages, changed headers, wrong dates, duplicates, missing rows and nonfinite prices are rejected.
-
-To remove, delete the integration from **Settings → Devices & services**, then remove it from HACS and restart. Unload cancels the clock and coordinator listeners and removes both actions. The integration's cache uses HA's managed storage API; do not edit `.storage` manually.
-
-## Development
+Din integrare poți descărca diagnostice și activa temporar jurnalizarea detaliată. Diagnosticele includ parametrii tarifari și starea sursei; nu publica date de cont, identificatori de contor sau tokenuri HA. Dacă folosești integrarea în panoul Energie, selectează prețul estimat doar după verificarea contractului configurat.
 
 ```sh
 uv sync --frozen
 uv run ruff check .
 uv run ruff format --check .
 uv run pytest --cov=custom_components.opcom_energy --cov-report=term-missing
-# Optional: contacts the real OPCOM service; not part of the offline tests.
+# Verificare opțională, care contactează OPCOM:
 PYTHONPATH=. uv run python scripts/check_live_source.py
 ```
 
-CI runs Home Assistant integration tests, Ruff, Hassfest and the HACS validator. Tests use real OPCOM CSV fixtures for regular, spring and autumn days, with network access disabled. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
+CI verifică testele, Ruff, Hassfest și HACS. Vezi [contribuții](CONTRIBUTING.md), [istoricul versiunilor](CHANGELOG.md) și [documentația completă în engleză](README.en.md). Pentru eliminare, șterge integrarea din Dispozitive și servicii, elimină descărcarea HACS și repornește HA.
 
-Data source: [OPCOM](https://www.opcom.ro), public PZU CSV exports at `/rapoarte-pzu-raportPIP-export-csv/{day}/{month}/{year}/ro?resolution=PT15M`. Market-time reference: [OPCOM operational procedure](https://www.opcom.ro/uploads/doc/PZU/PO%20PZU%2015%27.pdf). Source format and availability are controlled by OPCOM. This project makes no uptime guarantee.
-
-Original implementation by **Eduard Gaspar** ([gaspareduard](https://github.com/gaspareduard)). Software: [MIT license](LICENSE); OPCOM data and marks remain attributable to their source. The project icon is an original chart/lightning design, not an OPCOM trademark.
-
-Optional YellowGrid pricing (v1.2): the [editable chart-estimate preset](docs/tariffs.md#yellowgrid-chart-estimate-v12) includes a capped import energy price and a minimum export price after commission. Its Delgaz distribution example closely matches the 20 October chart; it is not confirmation of your contracted distribution operator. The separate invoice preset retains invoice distribution rates. Existing settings and raw OPCOM prices are preserved.
+Autor: **Eduard Gaspar** — [gaspareduard](https://github.com/gaspareduard). Sursa datelor: [OPCOM](https://www.opcom.ro); sursa modelului de ofertă: [YellowGrid](https://www.yellowgrid.ro/legislatie-si-contracte). Codul și grafica originală sunt publicate sub [licența MIT](LICENSE).

@@ -1,0 +1,133 @@
+{
+  "title": "Prețuri OPCOM",
+  "views": [
+    {
+      "title": "Prețuri",
+      "path": "prices",
+      "type": "sections",
+      "max_columns": 3,
+      "header": {
+        "layout": "responsive",
+        "badges_position": "bottom",
+        "card": {
+          "type": "markdown",
+          "text_only": true,
+          "content": "# Prețuri energie electrică\nImportul și exportul YellowGrid, comparate cu OPCOM angro. Prețuri în **lei/kWh**."
+        }
+      },
+      "badges": [
+        {
+          "type": "entity",
+          "entity": "binary_sensor.opcom_energy_source_available",
+          "name": "Conexiune OPCOM",
+          "show_name": true,
+          "show_state": true,
+          "color": "teal"
+        },
+        {
+          "type": "entity",
+          "entity": "binary_sensor.opcom_energy_tomorrow_schedule_complete",
+          "name": "Mâine publicat",
+          "show_name": true,
+          "show_state": true,
+          "color": "indigo"
+        }
+      ],
+      "sections": [
+        {
+          "type": "grid",
+          "column_span": 3,
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Prețurile intervalului curent",
+              "heading_style": "title",
+              "icon": "mdi:clock-outline"
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.opcom_energy_estimated_import_price",
+              "name": "Import YellowGrid",
+              "icon": "mdi:transmission-tower-import",
+              "color": "cyan",
+              "grid_options": {
+                "columns": 12,
+                "rows": 1
+              },
+              "tap_action": {
+                "action": "more-info"
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.opcom_energy_estimated_export_price",
+              "name": "Export YellowGrid",
+              "icon": "mdi:transmission-tower-export",
+              "color": "teal",
+              "grid_options": {
+                "columns": 12,
+                "rows": 1
+              },
+              "tap_action": {
+                "action": "more-info"
+              }
+            },
+            {
+              "type": "tile",
+              "entity": "sensor.opcom_energy_spot_price",
+              "name": "OPCOM angro",
+              "icon": "mdi:chart-line",
+              "color": "indigo",
+              "grid_options": {
+                "columns": 12,
+                "rows": 1
+              },
+              "tap_action": {
+                "action": "more-info"
+              }
+            },
+            {
+              "type": "markdown",
+              "text_only": true,
+              "grid_options": {
+                "columns": "full",
+                "rows": "auto"
+              },
+              "content": "Plafon final de import **{{ state_attr('sensor.opcom_energy_estimated_import_price', 'final_import_cap') }} lei/kWh**, cu tarife și TVA incluse · Prag minim de export **{{ state_attr('sensor.opcom_energy_estimated_export_price', 'export_floor') }} lei/kWh** · Comision **{{ state_attr('sensor.opcom_energy_estimated_export_price', 'commission') }}%**.\n\nValorile YellowGrid sunt estimări pe baza tarifului configurat. Prețul OPCOM angro este afișat separat, înainte de ajustările furnizorului și taxe."
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "column_span": 3,
+          "cards": [
+            {
+              "type": "custom:opcom-price-bars-card",
+              "title": "Astăzi",
+              "day_offset": 0,
+              "grid_options": {
+                "columns": "full",
+                "rows": "auto"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "column_span": 3,
+          "cards": [
+            {
+              "type": "custom:opcom-price-bars-card",
+              "title": "Mâine",
+              "day_offset": 1,
+              "grid_options": {
+                "columns": "full",
+                "rows": "auto"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

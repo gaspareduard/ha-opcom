@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Make Romanian the primary README and tariff-guide language; preserve English documentation and the existing Romanian README URL.
+- Document the complete YellowGrid setup, effective dates, final import cap, export floor, editable rates/VAT and unconfirmed distribution assumptions.
+- Add a reusable Romanian dashboard example with import/export bars and raw OPCOM as a line, using authoritative backend schedules for today and tomorrow.
+
 ## 1.2.2
 
 - Fix HTTP 403 failures after the first public OPCOM CSV download: use a cookie-free HA-managed session with shared connectors, rather than replaying cookies set by the export endpoint. Preserve TLS verification, validation and retry behavior.

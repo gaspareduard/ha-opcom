@@ -1,78 +1,77 @@
-# Configure optional tariff components
+# Tarife editabile, TVA și configurare YellowGrid
 
-Version 1.1 adds an opt-in **Components** import-pricing mode. Existing installations stay in **Simple** mode. All configuration lives in HA config-entry options and survives restarts; no supplier login or invoice upload is required.
+[Înapoi la documentația principală](../README.md) · [English](tariffs.en.md)
 
-## Configure a version
+## Alegerea modului de calcul
 
-Open the integration's **Configure → Tariff versions and components → Add tariff version**. Choose an effective date. The **Empty** starting configuration contains no additional charges. The **September 2026 invoice (editable)** configuration contains the documented example network charges and levies; choosing it is explicit and never changes other users' settings automatically.
+**Simplu** păstrează multiplicatorii și adaosurile originale. **Componente** folosește versiuni cu dată de intrare în vigoare, energie înainte de TVA, tarife individuale și TVA pentru fiecare. Setările celor două moduri sunt independente; un multiplicator simplu care include deja TVA nu trebuie copiat ca multiplicator de energie înainte de TVA.
 
-Set the base energy before VAT as `spot × multiplier + adder`. The new fields are independent of the original import multiplier/adder, which may already contain VAT and network fees. Defaults are multiplier 1, adder 0 and energy VAT 21%. VAT fields are percentages: enter 21, not 1.21.
+Adaugă și salvează versiunea prin **Configurează → Versiuni tarifare și componente**, apoi activează **Componente** din meniul modului de calcul. Într-un HA în engleză: **Configure → Tariff versions and components**, apoi **Import pricing mode → Components**.
 
-The next menu supports adding a component, editing one by name, removing a component and saving the version. Components have a name, before-VAT RON/kWh rate, VAT percentage, enabled flag and a VAT-treatment verification flag. Disabled components contribute neither their rate nor VAT. Zero VAT and negative rates (credits) are supported when appropriate to the configured contract. All numbers must be finite; VAT and energy multipliers are 0–100, rates/adders are -10000–10000. Dates and component names must be unique within their respective scopes.
+## Presetul YellowGrid
 
-Component edits remain in the flow until **Save tariff**. After saving, reopen Configure and select **Import pricing mode → Components**. Switching back to Simple restores its saved formula without deleting tariff versions.
+La adăugarea unei versiuni, alegerea inițială este **YellowGrid — estimare grafic 20 octombrie (editabil)**. Este necesară salvarea explicită a unei date și activarea modului Componente. Modurile goale și pe baza facturii rămân disponibile; versiunile existente nu sunt înlocuite automat.
 
-## Dates and changes
+| Câmp | Valoare inițială |
+| --- | ---: |
+| Plafon final import, cu tarife și TVA (`final_import_cap`) | `1.31` lei/kWh |
+| Plafon energie importată înainte de TVA (`import_cap`) | `0.55` lei/kWh |
+| Prag minim export (`export_floor`) | `0.50` lei/kWh |
+| Comision (`commission`) | `25` % |
+| Multiplicator / adaos energie | `1` / `0` |
+| TVA energie | `21` % |
 
-Each version applies from its effective date at HA-local midnight until the next version. The interval's start chooses the version, not the current wall clock or OPCOM's market-day date. Future schedules therefore use scheduled future rates. No version applies backward before its date.
+Plafonul final de **1,31 lei/kWh** și minimul de export de **0,50 lei/kWh** sunt parametrii confirmați de utilizator pentru configurația sa. Plafonul energiei active de 0,55 și comisionul de 25% pornesc din [oferta publică YellowGrid](https://www.yellowgrid.ro/legislatie-si-contracte), valabilă 1 septembrie–30 noiembrie 2026. Contractele pot avea alte condiții; toate valorile sunt editabile.
 
-Use **Edit tariff version** to change a version, including its date. To introduce a new rate period while preserving earlier rates, add a new version instead of editing the earlier one. **Delete tariff version** saves the deletion immediately after selecting its date; the previous version, if any, then continues until the next one. Deleting the earliest version removes earlier coverage. Stored HA history is not rewritten, and this integration does not provide a historical billing ledger.
-
-No covering tariff means an unavailable import total, unavailable import threshold and unavailable component breakdown. Wholesale data and export prices remain usable. Import planning excludes windows with missing coverage; it never fills such intervals with zero or raw spot.
-
-## Example calculation
-
-With spot/base energy 0.5 RON/kWh, a single charge of 0.1 RON/kWh, and 21% VAT on both:
-
-```text
-base energy before VAT = 0.5
-additional charges before VAT = 0.1
-VAT = 0.105 + 0.021 = 0.126
-estimated total = 0.726 RON/kWh
-```
-
-If the component is non-taxable, set its VAT to 0: VAT becomes 0.105 and the total becomes 0.705. If the component is disabled, the total becomes 0.605. Decimal precision is retained internally; display and invoice line-item rounding may differ.
-
-The September invoice example adds nine components totalling 0.4648832 RON/kWh before VAT. Its VAT starting assumption is 21%; CfD is explicitly marked unverified. Keep or change this only according to the applicable contract/tax treatment. The invoice's monthly average energy rate is not a fixed replacement for interval spot prices. The separate YellowGrid preset below adds supplier caps, floors and commission rules.
-
-## Read the breakdown
-
-The existing **Estimated import price** remains the total-price entity. The additional sensors are **Import base energy before VAT**, **Import additional charges before VAT** and **Import VAT amount**. They are unavailable in Simple mode because its arbitrary multiplier/adder does not identify a tax breakdown.
-
-Attributes include `tariff_effective_from`, `base_energy`, `additional_charges`, `vat_amount`, `estimated_total`, the energy settings, named enabled components and `unverified_vat_components`. Values are RON/kWh except VAT percentages and the energy multiplier.
-
-`opcom_energy.get_prices` with `price_type: import` returns the same total and `breakdown` per covered interval. An interval without coverage returns `price: null` and `unavailable_reason: no_tariff`, and the overall `complete` flag is false. Consumers must check both completeness and null prices. Simple-mode, spot and export response shapes are preserved.
-
-Raw daily average/min/max and percentile sensors retain their wholesale meaning. Import thresholds and import-price window planning use the selected import-pricing mode. Export pricing never inherits import network charges.
-
-These are marginal price estimates. Fixed subscriptions, meter-energy accounting, monthly invoice totals, supplier-rate discovery and automatic equipment control are outside v1.1. No private invoice PDF, meter identifiers or account details are included in the integration.
-
-## YellowGrid chart estimate (v1.2)
-
-Adding a version now offers **YellowGrid — 20 October chart estimate (editable)** as the default starting choice. It still requires saving a dated version and explicitly enabling Components mode. Existing saved versions and Simple mode are unchanged. The invoice-only and empty presets remain available.
-
-The [supplier’s published offer](https://www.yellowgrid.ro/legislatie-si-contracte), “Ofertă de Agregare și Furnizare Preț Dinamic”, valid 1 September–30 November 2026, supplies these editable starting parameters: import active-energy cap **0.55 RON/kWh**, export floor **0.50 RON/kWh**, commission **25%**. With `s = raw OPCOM RON/kWh` and `c = commission / 100`:
+Cu `s = OPCOM lei/MWh / 1000` și `c = comision / 100`:
 
 ```text
-import energy = min(cap, s + (cap - s) * c)
-base before VAT = import energy * energy_multiplier + energy_adder
-import total = base + enabled charges + their configured VAT
-export estimate = max(floor, floor + (s - floor) * (1 - c))
+energie importată = min(plafon_energie, s + (plafon_energie - s) × c)
+bază înainte de TVA = energie importată × multiplicator + adaos
+tarife suplimentare = suma componentelor activate
+TVA = TVA bazei + TVA componentelor activate
+total neplafonat = bază + tarife suplimentare + TVA
+preț import = min(total neplafonat, plafon_final_import)
+ajustare plafon = preț import - total neplafonat
+preț export = max(prag_minim_export, prag_minim_export + (s - prag_minim_export) × (1 - c))
 ```
 
-Export has no import VAT or network fees. The same dated version selects the import cap, export floor, commission and charges at HA-local midnight. In Components mode, once any YellowGrid version is configured, export also requires a covering version; a covered linear version uses the saved simple export formula. Simple mode always uses its original saved import/export formulas. This models marginal displayed prices, not a settlement or benefits ledger.
+La setările inițiale, exportul peste prag este `0.75 × s + 0.125`. Exportul nu primește tarifele de rețea sau TVA ale importului. Plafonul final de import se aplică după calcularea tarifelor și taxelor; senzorii componentelor păstrează valorile configurate, iar ajustarea plafonului este afișată separat, fără inventarea unei repartizări fiscale a discountului furnizorului.
 
-For the 20 October 2026 chart, all 96 quarter-hours (00:00–23:45 Europe/Bucharest, assembled from the 19 and 20 October OPCOM market-day CSVs) closely follow `0.75*s + 0.125` for export. For example, at 09:00 OPCOM is 2.5 and export is 2.0 RON/kWh. The export root-mean-square discrepancy against chart pixels was approximately 0.004 RON/kWh (maximum 0.009). Raster readings have several thousandths of a RON/kWh uncertainty; exact tooltip values were not available. This supports the export rule but does not test its floor on that high-price day.
+Versiunile YellowGrid salvate în v1.2.0 nu au plafon final. Pentru a-l aplica, editează versiunea, setează câmpul **Final import cap, including charges and VAT** la `1.31` și salvează; alternativ, adaugă o versiune nouă cu data potrivită.
 
-Import appears flat around **1.31 RON/kWh**. The invoice charges total **0.4648832** before VAT; using the public 0.55 energy cap and 21% VAT gives **1.228008672**, which does **not** match that chart. The public offer’s Delgaz distribution rate **0.38791**, replacing the invoice’s combined IT/MT/JT **0.31739**, gives charges **0.5354032** and total **1.313337872**. All comparable OPCOM intervals exceed the cap, explaining the flat import bars.
+## Componente și ipoteze
 
-The original v1.2.0 chart estimate uses one explicitly named **Delgaz distribution (chart estimate)** component, instead of inventing a split across voltage levels. Other charges and VAT start from the invoice example. The supplier’s illustrative table independently gives the same Delgaz total. This is an uncapped numerical comparison, **not confirmation that Delgaz is your contracted operator**: your invoice supports a different distribution rate. Check your account’s selected tariff/region or contract before treating the chart preset as a billing estimate. To use your invoice distribution instead, choose the invoice preset, or replace this distribution component with your applicable rates. Every parameter remains editable; CfD VAT stays marked unverified.
+Fiecare componentă are nume, rată înainte de TVA în lei/kWh, TVA procentual, activare și marcaj de verificare a tratamentului TVA. Poți adăuga, edita sau elimina componente înainte de **Salvează versiunea**. Componentele dezactivate nu adaugă nici rată, nici TVA. Sunt acceptate TVA zero și rate negative pentru situațiile contractuale corespunzătoare.
 
+Numele trebuie să fie distincte și necompletate cu spații goale. Sunt acceptate cel mult 100 de versiuni, fiecare cu maximum 50 de componente. Valorile trebuie să fie finite: TVA și multiplicatorii sunt între 0 și 100, ratele/adaosurile între -10000 și 10000, iar plafoanele și pragurile YellowGrid între 0 și 10000. Introdu `21` pentru TVA de 21%, nu `1.21`.
 
-### Confirmed final import ceiling (v1.2.1)
+Presetul pe baza facturii din septembrie 2026 conține nouă componente, în total **0,4648832 lei/kWh înainte de TVA**. Distribuția IT/MT/JT însumează **0,31739**. Presetul pentru grafic folosește în schimb o singură componentă **Distribuție Delgaz (estimare grafic)** de **0,38791**, iar totalul componentelor sale este **0,5354032**. Acestea sunt două configurații alternative, nu tarife care se adună între ele.
 
-The user clarified that the **final import price is capped at 1.31 RON/kWh**, including charges and VAT, and export has a **0.50 RON/kWh floor**. Newly created YellowGrid presets therefore include an editable `final_import_cap` of 1.31. The previous 1.313337872 calculation is the **uncapped** example, not the final displayed price. A capped chart cannot establish which distribution operator or underlying component rates apply; the Delgaz example remains an editable, unconfirmed starting value, not a verified account tariff.
+Operatorul Delgaz este **neconfirmat pentru contract**. Un preț final plafonat nu permite deducerea operatorului sau a tuturor tarifelor subiacente. Alege ratele din contractul tău. Ambele exemple pornesc cu TVA de 21%; **TVA CfD este marcat neverificat**. O valoare rotunjită la zero pe factură nu dovedește o scutire. Nu sunt incluse facturi private, date de cont ori identificatori de contor.
 
-The resolver applies `estimated_total = min(uncapped_total, final_import_cap)` after calculating energy, charges and VAT. It reports `uncapped_total` and `cap_adjustment` explicitly: `base_energy + additional_charges + vat_amount + cap_adjustment = estimated_total`. The adjustment is zero below the ceiling and negative above it. Component and VAT sensors retain their configured values; the integration does not invent a tax allocation for the supplier adjustment. The export ceiling is unrestricted; 0.50 is a floor, not a fixed export price.
+## Date de intrare în vigoare
 
-Existing saved YellowGrid versions from v1.2.0 have no final ceiling until edited and saved. Reopen the version, set **Final import cap, including charges and VAT** to 1.31 and save, or add a new version with an appropriate effective date. Simple and invoice-only tariffs remain unchanged.
+O versiune începe la miezul nopții în fusul orar HA și continuă până la următoarea versiune. Fiecare interval folosește versiunea aplicabilă la începutul său. Datele viitoare folosesc versiunile programate pentru viitor, inclusiv parametrii de export YellowGrid.
+
+Pentru o perioadă nouă, adaugă o versiune; editarea unei versiuni îi schimbă configurația pentru perioada respectivă. Ștergerea salvează imediat eliminarea versiunii selectate și poate elimina acoperirea anterioară. Istoricul deja înregistrat în HA nu este rescris.
+
+Fără o versiune aplicabilă, importul și defalcarea sunt indisponibile. În modul Componente, dacă există versiuni YellowGrid, exportul necesită de asemenea o versiune care acoperă intervalul; o versiune liniară aplicabilă folosește formula simplă de export. Dacă sunt configurate numai versiuni liniare, exportul păstrează formula simplă independentă. OPCOM angro rămâne disponibil separat. Planificarea exclude ferestrele neacoperite; nu le evaluează la zero.
+
+## Defalcare și acțiuni
+
+Senzorii separă baza înainte de TVA, tarifele suplimentare și TVA. Senzorul importului include `tariff_effective_from`, `energy_model`, `components`, `unverified_vat_components`, `uncapped_total`, `final_import_cap` dacă este configurat și `cap_adjustment`.
+
+```text
+base_energy + additional_charges + vat_amount + cap_adjustment = estimated_total
+```
+
+În exemplul Delgaz, cu energia plafonată la 0,55 și TVA de 21%, totalul neplafonat este **1,313337872**; plafonul final produce **1,31**, iar ajustarea este **-0,003337872 lei/kWh**. Cu componentele exemplului de factură, același plafon de energie produce un total neplafonat de **1,228008672**. Aceste rezultate explică de ce plafonul energiei active și plafonul total sunt câmpuri distincte.
+
+`opcom_energy.get_prices` cu `price_type: import` returnează aceeași defalcare pe interval. Un interval neacoperit are `price: null`, `unavailable_reason: no_tariff` și contribuie la `complete: false`. Consumatorii trebuie să verifice atât completitudinea, cât și valorile nule. Graficele exemplului citesc direct aceste acțiuni, fără recalcularea tarifelor în browser.
+
+## Comparația cu graficul din 20 octombrie 2026
+
+Cele 96 de intervale ale zilei locale au fost comparate cu barele YellowGrid. Importul configurat rămâne **1,31 lei/kWh**. Exportul are maximul de **2,00** la 09:00 și minimul de **0,9259925** la 16:00, în `Europe/Bucharest`. Diferența aproximativă dintre exportul calculat și citirea pixelilor din ultima captură a fost 0,0034 lei/kWh RMS, cu maximum 0,009; imaginea nu confirmă egalitatea dincolo de precizia vizibilă.
+
+Acestea sunt estimări marginale pe kWh. Abonamentele fixe, energia efectiv măsurată, decontarea lunară, descoperirea automată a tarifelor și comanda echipamentelor nu fac parte din acest calcul.
