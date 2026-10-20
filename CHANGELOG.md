@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+- Add an editable final import ceiling of 1.31 RON/kWh to newly created YellowGrid presets, following user confirmation that this cap includes charges and VAT. Keep the export floor at 0.50 RON/kWh.
+- Expose the uncapped total and explicit cap adjustment without changing the configured charge or VAT breakdown. Existing saved tariffs retain their behavior until edited and saved with a final cap.
+- Clarify that a capped chart cannot confirm the distribution operator.
+
 ## 1.2.0
 
 - Add an optional editable YellowGrid pricing model: capped import active energy, export floor and supplier commission, all effective-dated in HA local time.

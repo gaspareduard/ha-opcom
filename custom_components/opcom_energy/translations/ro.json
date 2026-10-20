@@ -56,7 +56,7 @@
       },
       "add_tariff": {
         "title": "Adaugă versiune tarifară",
-        "description": "Presetul YellowGrid reproduce estimativ graficul din 20 octombrie: plafon import 0,55, prag export 0,50, comision 25% și distribuție Delgaz 0,38791 RON/kWh. Distribuția este dedusă din grafic, nu confirmată pentru contractul dvs. Alegeți separat factura pentru tarifele din factură. Verificați TVA CfD.",
+        "description": "Presetul YellowGrid reproduce estimativ graficul din 20 octombrie: plafon import 0,55, prag export 0,50, comision 25% și distribuție Delgaz 0,38791 RON/kWh. Distribuția este dedusă din grafic, nu confirmată pentru contractul dvs. Alegeți separat factura pentru tarifele din factură. Verificați TVA CfD. Plafonul final de import confirmat de utilizator este 1,31 RON/kWh. Graficul plafonat nu confirmă operatorul de distribuție.",
         "data": {
           "effective_from": "Data de început",
           "template": "Valori inițiale"
@@ -78,7 +78,7 @@
       },
       "version": {
         "title": "Energia înainte de TVA",
-        "description": "Model liniar: OPCOM × multiplicator + adaos. Model YellowGrid: energia importată este min(plafon, OPCOM + (plafon − OPCOM) × comision/100), apoi multiplicatorul și adaosul, înainte de TVA. Exportul folosește pragul și comisionul, fără tarifele de import.",
+        "description": "Model liniar: OPCOM × multiplicator + adaos. Model YellowGrid: energia importată este min(plafon, OPCOM + (plafon − OPCOM) × comision/100), apoi multiplicatorul și adaosul, înainte de TVA. Exportul folosește pragul și comisionul, fără tarifele de import. Plafonul final limitează totalul după tarife și TVA; ajustarea este afișată separat.",
         "data": {
           "effective_from": "Data de început",
           "energy_multiplier": "Multiplicator energie înainte de TVA",
@@ -86,7 +86,8 @@
           "energy_vat": "TVA energie (%)",
           "import_cap": "Plafon energie importată înainte de TVA (RON/kWh)",
           "export_floor": "Prag minim export (RON/kWh)",
-          "commission": "Comision furnizor (%)"
+          "commission": "Comision furnizor (%)",
+          "final_import_cap": "Plafon final import, inclusiv tarife și TVA (RON/kWh)"
         }
       },
       "tariff_details": {

@@ -657,7 +657,7 @@ async def test_yellowgrid_ui_sensors_and_actions(hass, fetch):
     result = await options_step(hass, entry, "pricing")
     await submit(hass, result, {"pricing_mode": "components"})
     await hass.async_block_till_done()
-    assert float(find(hass, "estimated_import_price").state) == pytest.approx(1.313337872)
+    assert float(find(hass, "estimated_import_price").state) == pytest.approx(1.31)
     assert find(hass, "estimated_import_price").attributes["import_cap"] == 0.55
     # The export sensor is disabled by default; enable it as a user would.
     from homeassistant.helpers import entity_registry as er
@@ -685,7 +685,7 @@ async def test_yellowgrid_ui_sensors_and_actions(hass, fetch):
         assert response["complete"]
         for row in response["prices"]:
             if kind == "import":
-                assert row["price"] == pytest.approx(1.313337872)
+                assert row["price"] == pytest.approx(1.31)
                 assert row["breakdown"]["energy_model"] == "yellowgrid"
             else:
                 source = next(

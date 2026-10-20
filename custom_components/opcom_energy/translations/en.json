@@ -56,7 +56,7 @@
       },
       "add_tariff": {
         "title": "Add tariff version",
-        "description": "The YellowGrid chart estimate uses import cap 0.55, export floor 0.50, commission 25% and Delgaz distribution 0.38791 RON/kWh. Distribution is inferred from the chart, not confirmed for your contract. Choose the invoice preset separately for invoice rates. Verify CfD VAT.",
+        "description": "The YellowGrid chart estimate uses import cap 0.55, export floor 0.50, commission 25% and Delgaz distribution 0.38791 RON/kWh. Distribution is inferred from the chart, not confirmed for your contract. Choose the invoice preset separately for invoice rates. Verify CfD VAT. The user-confirmed final import cap is 1.31 RON/kWh. The capped chart does not establish the distribution operator.",
         "data": {
           "effective_from": "Effective start date",
           "template": "Starting values"
@@ -78,7 +78,7 @@
       },
       "version": {
         "title": "Before-VAT energy settings",
-        "description": "Linear model: OPCOM × multiplier + adder. YellowGrid: import energy is min(cap, OPCOM + (cap − OPCOM) × commission/100), then multiplier and adder, before VAT. Export uses the floor and commission without import charges.",
+        "description": "Linear model: OPCOM × multiplier + adder. YellowGrid: import energy is min(cap, OPCOM + (cap − OPCOM) × commission/100), then multiplier and adder, before VAT. Export uses the floor and commission without import charges. The final cap limits the total after charges and VAT; its adjustment is shown separately.",
         "data": {
           "effective_from": "Effective start date",
           "energy_multiplier": "Before-VAT energy multiplier",
@@ -86,7 +86,8 @@
           "energy_vat": "Energy VAT (%)",
           "import_cap": "Import energy cap before VAT (RON/kWh)",
           "export_floor": "Export floor (RON/kWh)",
-          "commission": "Supplier commission (%)"
+          "commission": "Supplier commission (%)",
+          "final_import_cap": "Final import cap, including charges and VAT (RON/kWh)"
         }
       },
       "tariff_details": {

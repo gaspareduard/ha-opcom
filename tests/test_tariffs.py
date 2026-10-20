@@ -179,7 +179,9 @@ def test_yellowgrid_cap_commission_floor_and_invoice_separation(spot_value, base
     result = import_breakdown(slot(price=spot_value), config, RO)
     assert result.base_energy == Decimal(base)
     assert result.charges == Decimal(".5354032")
-    assert result.total == (Decimal(base) + Decimal(".5354032")) * Decimal("1.21")
+    assert result.total == min(
+        Decimal("1.31"), (Decimal(base) + Decimal(".5354032")) * Decimal("1.21")
+    )
     assert price_kwh(slot(price=spot_value), config, "export", RO) == Decimal(export)
     assert price_kwh(slot(price=spot_value), config) == Decimal(spot_value) / 1000
     assert sum(
@@ -247,7 +249,44 @@ def test_yellowgrid_planning_uses_cap_not_raw_order():
     config = options(yellowgrid_tariff("2026-09-01"))
     result = cheapest_window(rows, at, rows[-1].end, 15, config, "import", RO)
     assert result.start == at  # Both capped imports tie; raw spot would prefer the second.
-    assert result.average == Decimal("1.313337872")
+    assert result.average == Decimal("1.31")
     result = cheapest_window(rows, at, rows[-1].end, 15, config, "export", RO)
     assert result.start == rows[1].start
     assert result.average == Decimal(".875")
+
+
+@pytest.mark.parametrize("invalid", [-1, float("nan"), float("inf"), 10001])
+def test_final_import_cap_validation(invalid):
+    from custom_components.opcom_energy.prices import yellowgrid_tariff
+
+    version = yellowgrid_tariff("2026-09-01")
+    version["final_import_cap"] = invalid
+    with pytest.raises(PriceError):
+        validate_tariffs([version])
+
+
+def test_final_cap_breakdown_edits_and_legacy_versions():
+    from custom_components.opcom_energy.prices import yellowgrid_tariff
+
+    version = yellowgrid_tariff("2026-09-01")
+    result = import_breakdown(slot(price="2500"), options(version), RO)
+    assert result.total == Decimal("1.31")
+    assert result.attributes["uncapped_total"] == pytest.approx(1.313337872)
+    assert result.attributes["cap_adjustment"] == pytest.approx(-0.003337872)
+    assert (
+        result.base_energy
+        + result.charges
+        + result.vat
+        + Decimal(str(result.attributes["cap_adjustment"]))
+        == result.total
+    )
+    version["final_import_cap"] = 1.0
+    assert import_breakdown(slot(price="2500"), options(version), RO).total == 1
+    below = import_breakdown(slot(price="-1000"), options(version), RO)
+    assert below.total < 1
+    assert below.attributes["cap_adjustment"] == 0
+    del version["final_import_cap"]
+    validate_tariffs([version])
+    assert import_breakdown(slot(price="2500"), options(version), RO).total == Decimal(
+        "1.313337872"
+    )

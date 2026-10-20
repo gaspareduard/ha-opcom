@@ -49,7 +49,13 @@ def invoice_tariff(effective_from: str, language: str = "en") -> dict:
 def yellowgrid_tariff(effective_from: str, language: str = "en") -> dict:
     """Editable public-offer model, with the chart-consistent Delgaz example."""
     version = invoice_tariff(effective_from, language)
-    version.update(energy_model="yellowgrid", import_cap=0.55, export_floor=0.5, commission=25.0)
+    version.update(
+        energy_model="yellowgrid",
+        import_cap=0.55,
+        final_import_cap=1.31,
+        export_floor=0.5,
+        commission=25.0,
+    )
     # Public offer combines all distribution voltage levels into one charge.
     version["components"] = [c for i, c in enumerate(version["components"]) if i not in (2, 3, 4)]
     version["components"].insert(
@@ -100,6 +106,10 @@ def validate_tariffs(versions: list) -> None:
                     value = Decimal(str(version[key]))
                     if not value.is_finite() or not 0 <= value <= high:
                         raise ValueError("Invalid supplier cap, floor or commission")
+            if "final_import_cap" in version:
+                cap = Decimal(str(version["final_import_cap"]))
+                if model != "yellowgrid" or not cap.is_finite() or not 0 <= cap <= 10000:
+                    raise ValueError("Invalid final import cap")
             components = version["components"]
             if not isinstance(components, list) or len(components) > 50:
                 raise ValueError("Expected at most 50 components")
@@ -158,7 +168,10 @@ def import_breakdown(slot: PriceSlot, options: dict, tz: ZoneInfo) -> ImportBrea
         charges += rate
         vat += tax
         details.append({**component, "vat_amount": float(tax)})
-    total = base + charges + vat
+    uncapped_total = base + charges + vat
+    total = uncapped_total
+    if version.get("energy_model") == "yellowgrid" and "final_import_cap" in version:
+        total = min(total, Decimal(str(version["final_import_cap"])))
     return ImportBreakdown(
         base,
         charges,
@@ -171,8 +184,14 @@ def import_breakdown(slot: PriceSlot, options: dict, tz: ZoneInfo) -> ImportBrea
             "additional_charges": float(charges),
             "vat_amount": float(vat),
             "estimated_total": float(total),
+            "uncapped_total": float(uncapped_total),
+            "cap_adjustment": float(total - uncapped_total),
             "energy_model": version.get("energy_model", "linear"),
-            **{k: version[k] for k in ("import_cap", "commission") if k in version},
+            **{
+                k: version[k]
+                for k in ("import_cap", "final_import_cap", "commission")
+                if k in version
+            },
             "energy_multiplier": version["energy_multiplier"],
             "energy_adder": version["energy_adder"],
             "energy_vat_percent": version["energy_vat"],

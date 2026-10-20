@@ -232,9 +232,10 @@ class OpcomOptionsFlow(OptionsFlow):
                     vol.Required("energy_vat", default=defaults["energy_vat"]): number(0, 100),
                     **(
                         {
-                            vol.Required(key, default=defaults[key]): number(0, high)
+                            vol.Required(key, default=defaults.get(key, 1.31)): number(0, high)
                             for key, high in (
                                 ("import_cap", 10000),
+                                ("final_import_cap", 10000),
                                 ("export_floor", 10000),
                                 ("commission", 100),
                             )
