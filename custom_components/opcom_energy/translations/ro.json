@@ -17,9 +17,9 @@
   },
   "options": {
     "step": {
-      "init": {
+      "simple": {
         "title": "Opțiuni tarif și planificare",
-        "description": "Fiecare tarif: preț spot RON/kWh × multiplicator + adaos. Implicit este prețul angro. Introdu parametrii contractului; taxele nu sunt presupuse. Ferestrele folosesc formula de import; percentila folosește prețul spot.",
+        "description": "Fiecare tarif: preț spot RON/kWh × multiplicator + adaos. Implicit este prețul angro. Introdu parametrii contractului; taxele nu sunt presupuse. Ferestrele folosesc formula de import; percentila folosește prețul spot. Aceste setări de import se aplică doar modului simplu; salvarea nu schimbă modul activ. Setările de export și planificare se aplică în ambele moduri.",
         "data": {
           "import_adder": "Adaos import (RON/kWh)",
           "import_multiplier": "Multiplicator import",
@@ -29,10 +29,107 @@
           "cheap_percentile": "Prag percentilă pentru preț mic (%)",
           "window_minutes": "Durata ferestrei (minute, multiplu de 15)"
         }
+      },
+      "init": {
+        "title": "OPCOM Energy",
+        "menu_options": {
+          "simple": "Setări simple și planificare",
+          "pricing": "Modul de calcul al importului",
+          "tariffs": "Versiuni tarifare și componente"
+        }
+      },
+      "pricing": {
+        "title": "Mod de calcul",
+        "description": "Modul simplu păstrează formula originală. Modul pe componente folosește versiuni tarifare la miezul nopții locale HA. Fără o versiune aplicabilă, totalul estimat este indisponibil. Prețul OPCOM rămâne vizibil.",
+        "data": {
+          "pricing_mode": "Mod de calcul"
+        }
+      },
+      "tariffs": {
+        "title": "Versiuni tarifare",
+        "description": "Fiecare versiune conține energia înainte de TVA, componentele și TVA. Modificările sunt salvate doar la Salvare versiune.",
+        "menu_options": {
+          "add_tariff": "Adaugă versiune",
+          "edit_tariff": "Editează versiune",
+          "delete_tariff": "Șterge versiune"
+        }
+      },
+      "add_tariff": {
+        "title": "Adaugă versiune tarifară",
+        "description": "Alege explicit data. Valorile din factura septembrie 2026 sunt orientative și editabile, nu un tarif universal YellowGrid. TVA CfD trebuie verificat.",
+        "data": {
+          "effective_from": "Data de început",
+          "template": "Valori inițiale"
+        }
+      },
+      "edit_tariff": {
+        "title": "Editează versiune",
+        "description": "Alege versiunea de editat.",
+        "data": {
+          "effective_from": "Data de început"
+        }
+      },
+      "delete_tariff": {
+        "title": "Șterge versiune",
+        "description": "Alegerea unei date șterge versiunea și salvează imediat. Poate elimina acoperirea tarifară. Restul versiunilor rămân.",
+        "data": {
+          "effective_from": "Data de început"
+        }
+      },
+      "version": {
+        "title": "Energia înainte de TVA",
+        "description": "Energie = OPCOM × multiplicator + adaos, înainte de TVA. Nu copia aici setările simple dacă ele includ deja TVA sau tarife de rețea. TVA este procent, de exemplu 21.",
+        "data": {
+          "effective_from": "Data de început",
+          "energy_multiplier": "Multiplicator energie înainte de TVA",
+          "energy_adder": "Adaos energie înainte de TVA (RON/kWh)",
+          "energy_vat": "TVA energie (%)"
+        }
+      },
+      "tariff_details": {
+        "title": "Componente tarifare",
+        "description": "Poți edita mai multe componente înainte de salvare. CfD din modelul facturii are TVA 21% presupus și neverificat; verifică în contract și editează-l. Factura cu TVA rotunjit la zero nu demonstrează scutire.",
+        "menu_options": {
+          "add_component": "Adaugă componentă",
+          "edit_component": "Editează componentă",
+          "remove_component": "Elimină componentă",
+          "save_tariff": "Salvează versiunea"
+        }
+      },
+      "edit_component": {
+        "title": "Alege componenta",
+        "description": "Alege componenta după nume.",
+        "data": {
+          "component": "Componentă"
+        }
+      },
+      "remove_component": {
+        "title": "Alege componenta",
+        "description": "Alege componenta după nume.",
+        "data": {
+          "component": "Componentă"
+        }
+      },
+      "component": {
+        "title": "Componentă pe kWh",
+        "description": "Suma este înainte de TVA, în RON/kWh. TVA 0 înseamnă fără TVA doar dacă este confirmat. O componentă dezactivată nu contribuie la total.",
+        "data": {
+          "name": "Nume",
+          "rate": "Valoare înainte de TVA (RON/kWh)",
+          "vat": "TVA (%)",
+          "enabled": "Activată",
+          "vat_verified": "Tratament TVA verificat"
+        }
       }
     },
     "error": {
-      "invalid_options": "Folosește numere finite, multiplicatori 0–100, percentilă 0–100 și o fereastră de 15–1440 minute divizibilă cu 15."
+      "invalid_options": "Folosește numere finite, multiplicatori 0–100, percentilă 0–100 și o fereastră de 15–1440 minute divizibilă cu 15.",
+      "duplicate_date": "Există deja o versiune pentru această dată.",
+      "invalid_tariff": "Verifică datele și numele unice, valorile finite, multiplicatorul 0–100, TVA 0–100 și sumele între -10000 și 10000."
+    },
+    "abort": {
+      "no_tariffs": "Nu există versiuni tarifare. Adaugă una mai întâi.",
+      "no_components": "Versiunea nu conține componente. Adaugă una mai întâi."
     }
   },
   "entity": {
@@ -75,6 +172,15 @@
       },
       "last_successful_fetch": {
         "name": "Ultima descărcare reușită"
+      },
+      "import_base_energy": {
+        "name": "Energie de import înainte de TVA"
+      },
+      "import_additional_charges": {
+        "name": "Tarife suplimentare import înainte de TVA"
+      },
+      "import_vat": {
+        "name": "Valoare TVA import"
       }
     },
     "binary_sensor": {
@@ -127,6 +233,16 @@
           "name": "Tip preț",
           "description": "Tip preț"
         }
+      }
+    }
+  },
+  "selector": {
+    "tariff_options": {
+      "options": {
+        "simple": "Simplu",
+        "components": "Componente",
+        "empty": "Gol (fără componente)",
+        "invoice_2026_09": "Factură septembrie 2026 (editabilă)"
       }
     }
   }

@@ -17,9 +17,9 @@
   },
   "options": {
     "step": {
-      "init": {
+      "simple": {
         "title": "Tariff and planning options",
-        "description": "Each tariff is: spot RON/kWh × multiplier + adder. Defaults equal wholesale spot prices. Enter your own contract parameters; taxes and fees are never assumed. Cheapest windows use the import formula; cheap percentile uses spot prices.",
+        "description": "Each tariff is: spot RON/kWh × multiplier + adder. Defaults equal wholesale spot prices. Enter your own contract parameters; taxes and fees are never assumed. Cheapest windows use the import formula; cheap percentile uses spot prices. These import settings apply only in simple mode; saving does not switch the active mode. Export and planning settings apply in both modes.",
         "data": {
           "import_adder": "Import adder (RON/kWh)",
           "import_multiplier": "Import multiplier",
@@ -29,10 +29,107 @@
           "cheap_percentile": "Cheap percentile threshold (%)",
           "window_minutes": "Planning window duration (minutes, multiple of 15)"
         }
+      },
+      "init": {
+        "title": "OPCOM Energy",
+        "menu_options": {
+          "simple": "Simple settings and planning",
+          "pricing": "Import pricing mode",
+          "tariffs": "Tariff versions and components"
+        }
+      },
+      "pricing": {
+        "title": "Pricing mode",
+        "description": "Simple mode preserves the original formula and settings. Components mode uses dated tariffs at HA-local midnight. Without a covering version the estimated total is unavailable. Raw OPCOM prices stay visible.",
+        "data": {
+          "pricing_mode": "Pricing mode"
+        }
+      },
+      "tariffs": {
+        "title": "Tariff versions",
+        "description": "Each version contains before-VAT energy settings, components and VAT. Edits are committed only when you choose Save tariff.",
+        "menu_options": {
+          "add_tariff": "Add tariff version",
+          "edit_tariff": "Edit tariff version",
+          "delete_tariff": "Delete tariff version"
+        }
+      },
+      "add_tariff": {
+        "title": "Add tariff version",
+        "description": "Choose the date explicitly. The September 2026 invoice values are editable starting values, not a universal YellowGrid tariff. Verify CfD VAT treatment.",
+        "data": {
+          "effective_from": "Effective start date",
+          "template": "Starting values"
+        }
+      },
+      "edit_tariff": {
+        "title": "Edit tariff version",
+        "description": "Choose the version to edit.",
+        "data": {
+          "effective_from": "Effective start date"
+        }
+      },
+      "delete_tariff": {
+        "title": "Delete tariff version",
+        "description": "Selecting a date deletes that version and saves immediately. This can remove tariff coverage. Other versions are preserved.",
+        "data": {
+          "effective_from": "Effective start date"
+        }
+      },
+      "version": {
+        "title": "Before-VAT energy settings",
+        "description": "Energy = OPCOM × multiplier + adder, before VAT. Do not copy simple-mode settings here if they already include VAT or network charges. VAT is a percentage, for example 21.",
+        "data": {
+          "effective_from": "Effective start date",
+          "energy_multiplier": "Before-VAT energy multiplier",
+          "energy_adder": "Before-VAT energy adder (RON/kWh)",
+          "energy_vat": "Energy VAT (%)"
+        }
+      },
+      "tariff_details": {
+        "title": "Tariff components",
+        "description": "Edit multiple components before saving. The invoice template assumes 21% CfD VAT and marks it unverified; check your contract and edit it. Rounded zero invoice VAT does not establish exemption.",
+        "menu_options": {
+          "add_component": "Add component",
+          "edit_component": "Edit component",
+          "remove_component": "Remove component",
+          "save_tariff": "Save tariff"
+        }
+      },
+      "edit_component": {
+        "title": "Choose component",
+        "description": "Select a component by its name.",
+        "data": {
+          "component": "Component"
+        }
+      },
+      "remove_component": {
+        "title": "Choose component",
+        "description": "Select a component by its name.",
+        "data": {
+          "component": "Component"
+        }
+      },
+      "component": {
+        "title": "Per-kWh component",
+        "description": "Rate is before VAT in RON/kWh. Set VAT to zero only when appropriate. Disabled components do not contribute to the total.",
+        "data": {
+          "name": "Name",
+          "rate": "Before-VAT rate (RON/kWh)",
+          "vat": "VAT (%)",
+          "enabled": "Enabled",
+          "vat_verified": "VAT treatment verified"
+        }
       }
     },
     "error": {
-      "invalid_options": "Use finite numbers, multipliers 0–100, percentile 0–100, and a window of 15–1440 minutes divisible by 15."
+      "invalid_options": "Use finite numbers, multipliers 0–100, percentile 0–100, and a window of 15–1440 minutes divisible by 15.",
+      "duplicate_date": "A tariff version already starts on that date.",
+      "invalid_tariff": "Check unique dates/names, finite values, multiplier 0–100, VAT 0–100 and rates between -10000 and 10000."
+    },
+    "abort": {
+      "no_tariffs": "No tariff versions exist. Add one first.",
+      "no_components": "This version has no components. Add one first."
     }
   },
   "entity": {
@@ -75,6 +172,15 @@
       },
       "last_successful_fetch": {
         "name": "Last successful fetch"
+      },
+      "import_base_energy": {
+        "name": "Import base energy before VAT"
+      },
+      "import_additional_charges": {
+        "name": "Import additional charges before VAT"
+      },
+      "import_vat": {
+        "name": "Import VAT amount"
       }
     },
     "binary_sensor": {
@@ -127,6 +233,16 @@
           "name": "Price type",
           "description": "Price type"
         }
+      }
+    }
+  },
+  "selector": {
+    "tariff_options": {
+      "options": {
+        "simple": "Simple",
+        "components": "Components",
+        "empty": "Empty (no components)",
+        "invoice_2026_09": "September 2026 invoice (editable)"
       }
     }
   }

@@ -8,7 +8,7 @@ Integrare independentă pentru prețurile angro PZU din România, descărcate di
 2. Adaugă `https://github.com/gaspareduard/ha-opcom`, categoria **Integration**.
 3. Descarcă **OPCOM Energy** și repornește Home Assistant.
 4. Settings → Devices & services → Add integration → **OPCOM Energy**.
-5. Folosește **Configure** pentru formulele tarifare și durata ferestrei.
+5. Folosește **Configure → Setări simple și planificare** pentru formulele originale. Modul opțional pe componente se configurează separat.
 
 Este disponibilă tuturor prin repository personalizat HACS. Includerea în catalogul implicit depinde separat de evaluarea HACS. Poate coexista cu integrarea `opcom`; nu îi schimbă senzorii sau setările.
 
@@ -38,3 +38,15 @@ Ferestrele senzorilor folosesc formula de import; acțiunea folosește implicit 
 Pentru exemple, diagnosticare, semantica fiecărui senzor și dezvoltare, consultă [documentația completă în engleză](README.md). Configurarea și numele entităților sunt disponibile și în română.
 
 Autor: **Eduard Gaspar** — [gaspareduard](https://github.com/gaspareduard). Proiect neafiliat OPCOM. Sursa datelor: [OPCOM](https://www.opcom.ro).
+
+## Tarife pe componente în v1.1
+
+Modul simplu rămâne implicit, cu aceleași rezultate și setări. Pentru tarife editabile, alege **Configure → Versiuni tarifare și componente → Adaugă versiune**. Alege explicit data de început și valori inițiale goale sau modelul facturii din septembrie 2026. Setează energia înainte de TVA, editează componentele și TVA pentru fiecare, apoi **Salvează versiunea**. Activează calculul prin **Modul de calcul al importului → Componente**.
+
+Energia înainte de TVA este OPCOM × multiplicator + adaos. La aceasta se adaugă componentele active și TVA aferentă energiei și fiecărei componente. Setările sunt separate de modul simplu, astfel încât TVA să nu fie aplicată de două ori. Importul, exportul și prețul angro rămân distincte.
+
+Fiecare versiune intră în vigoare la miezul nopții în fusul orar HA și se aplică la începutul fiecărui interval, până la următoarea versiune. Poți programa modificări viitoare. Fără o versiune aplicabilă, totalul estimat este indisponibil; prețul OPCOM rămâne disponibil.
+
+Modelul facturii are componente de 0.4648832 RON/kWh înainte de TVA și TVA inițială editabilă de 21%. TVA CfD este marcată neverificată. Valorile sunt orientative, nu un tarif universal YellowGrid. Nu se aplică automat plafoane sau comisioane specifice contractului.
+
+Senzorii suplimentari afișează energia înainte de TVA, tarifele suplimentare și TVA. Atributele totalului și răspunsurile acțiunii `get_prices` pentru import includ defalcarea. Intervalele fără acoperire tarifară au `price: null`, motivul `no_tariff` și `complete: false`. Planificarea nu le tratează drept zero și nu le unește peste goluri.

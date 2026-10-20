@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 DOMAIN = "opcom_energy"
 NAME = "OPCOM Energy"
-VERSION = "1.0.1"
+VERSION = "1.1.0"
 MARKET_TZ = ZoneInfo("Europe/Berlin")
 SLOT_LENGTH = timedelta(minutes=15)
 SOURCE_URL = "https://www.opcom.ro"
@@ -19,3 +19,16 @@ DEFAULT_OPTIONS = {
     "cheap_percentile": 25,
     "window_minutes": 60,
 }
+
+# Optional September 2026 invoice starting values, never applied automatically.
+INVOICE_COMPONENTS = (
+    ("Network extraction", "Extragere din rețea", 0.03645),
+    ("System service", "Serviciu de sistem", 0.0147),
+    ("Distribution IT", "Distribuție IT", 0.02383),
+    ("Distribution MT", "Distribuție MT", 0.06836),
+    ("Distribution JT", "Distribuție JT", 0.2252),
+    ("Green certificates", "Certificate verzi", 0.0740192),
+    ("Cogeneration", "Cogenerare", 0.0145),
+    ("Excise", "Acciză", 0.00768),
+    ("CfD contribution", "Contribuție CfD", 0.000144),
+)

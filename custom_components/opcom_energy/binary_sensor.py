@@ -11,7 +11,7 @@ from homeassistant.util import dt as dt_util
 
 from . import OpcomConfigEntry
 from .entity import OpcomEntity
-from .prices import current_slot, day_slots, percentile, price_kwh
+from .prices import TariffUnavailable, current_slot, day_slots, percentile, price_kwh
 
 PARALLEL_UPDATES = 0
 DESCRIPTIONS = (
@@ -62,9 +62,13 @@ class OpcomBinarySensor(OpcomEntity, BinarySensorEntity):
         if slot is None:
             return None
         if key == "below_threshold":
-            return price_kwh(slot, self.coordinator.options, "import") <= Decimal(
-                str(self.coordinator.options["cheap_threshold"])
-            )
+            try:
+                value = price_kwh(
+                    slot, self.coordinator.options, "import", self.coordinator.local_tz
+                )
+            except TariffUnavailable:
+                return None
+            return value <= Decimal(str(self.coordinator.options["cheap_threshold"]))
         selected = day_slots(rows, today, self.coordinator.local_tz)
         if not selected:
             return None

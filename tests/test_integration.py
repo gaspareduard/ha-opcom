@@ -145,6 +145,9 @@ async def test_options_validation_and_reload(hass, fetch):
     entry = await setup(hass)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "simple"}
+    )
+    result = await hass.config_entries.options.async_configure(
         result["flow_id"], DEFAULT_OPTIONS | {"window_minutes": 31}
     )
     assert result["errors"] == {"base": "invalid_options"}
@@ -358,3 +361,270 @@ async def test_sensor_properties_share_a_reading_until_next_update(hass, fetch, 
     await hass.async_block_till_done()
     assert entity.extra_state_attributes["start"] == "2026-10-20T12:15:00+00:00"
     assert float(entity.native_value) == float(find(hass, "spot_price").state)
+
+
+async def options_step(hass, entry, step):
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    return await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": step}
+    )
+
+
+async def submit(hass, result, data):
+    return await hass.config_entries.options.async_configure(result["flow_id"], data)
+
+
+async def test_invoice_components_ui_and_mode_switch_preserve_simple(hass, fetch):
+    entry = await setup(hass, {"import_multiplier": 1.21, "import_adder": 0.56})
+    original = find(hass, "estimated_import_price").state
+    result = await options_step(hass, entry, "tariffs")
+    result = await submit(hass, result, {"next_step_id": "add_tariff"})
+    result = await submit(
+        hass, result, {"effective_from": "2026-09-01", "template": "invoice_2026_09"}
+    )
+    assert result["step_id"] == "version"
+    result = await submit(
+        hass,
+        result,
+        {
+            "effective_from": "2026-09-01",
+            "energy_multiplier": 1,
+            "energy_adder": 0,
+            "energy_vat": 21,
+        },
+    )
+    result = await submit(hass, result, {"next_step_id": "edit_component"})
+    result = await submit(hass, result, {"component": "8"})
+    assert result["step_id"] == "component"
+    result = await submit(
+        hass,
+        result,
+        {
+            "name": "CfD contribution",
+            "rate": 0.000144,
+            "vat": 0,
+            "enabled": True,
+            "vat_verified": True,
+        },
+    )
+    result = await submit(hass, result, {"next_step_id": "save_tariff"})
+    await hass.async_block_till_done()
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options["import_multiplier"] == 1.21
+    assert find(hass, "estimated_import_price").state == original
+    assert entry.options["tariff_versions"][0]["components"][8]["vat"] == 0
+    result = await options_step(hass, entry, "pricing")
+    await submit(hass, result, {"pricing_mode": "components"})
+    await hass.async_block_till_done()
+    spot = float(find(hass, "spot_price").state)
+    assert float(find(hass, "estimated_import_price").state) == pytest.approx(
+        spot * 1.21 + 0.562478432
+    )
+    assert float(find(hass, "import_additional_charges_before_vat").state) == 0.4648832
+    assert find(hass, "estimated_import_price").attributes["unverified_vat_components"] == []
+    # Returning to simple mode restores the same formula without losing tariffs.
+    result = await options_step(hass, entry, "pricing")
+    await submit(hass, result, {"pricing_mode": "simple"})
+    await hass.async_block_till_done()
+    assert find(hass, "estimated_import_price").state == original
+    assert len(entry.options["tariff_versions"]) == 1
+
+
+async def test_tariff_ui_custom_components_edit_validation_and_delete(hass, fetch):
+    from custom_components.opcom_energy.prices import invoice_tariff
+
+    version = invoice_tariff("2026-09-01")
+    version["components"] = []
+    entry = await setup(hass, {"tariff_versions": [version]})
+    result = await options_step(hass, entry, "tariffs")
+    result = await submit(hass, result, {"next_step_id": "add_tariff"})
+    result = await submit(hass, result, {"effective_from": "2026-09-01", "template": "empty"})
+    assert result["errors"] == {"base": "duplicate_date"}
+    result = await submit(hass, result, {"effective_from": "2026-11-01", "template": "empty"})
+    base = {
+        "effective_from": "2026-11-01",
+        "energy_multiplier": 1,
+        "energy_adder": 0,
+        "energy_vat": 21,
+    }
+    result = await submit(hass, result, base)
+    result = await submit(hass, result, {"next_step_id": "add_component"})
+    component = {
+        "name": "Custom fee",
+        "rate": 0.1,
+        "vat": 21,
+        "enabled": True,
+        "vat_verified": False,
+    }
+    result = await submit(hass, result, component | {"name": " "})
+    assert result["errors"] == {"base": "invalid_tariff"}
+    result = await submit(hass, result, component)
+    result = await submit(hass, result, {"next_step_id": "add_component"})
+    result = await submit(hass, result, component)
+    assert result["errors"] == {"base": "invalid_tariff"}
+    result = await submit(hass, result, component | {"name": "Second", "enabled": False})
+    result = await submit(hass, result, {"next_step_id": "remove_component"})
+    result = await submit(hass, result, {"component": "1"})
+    result = await submit(hass, result, {"next_step_id": "save_tariff"})
+    await hass.async_block_till_done()
+    assert len(entry.options["tariff_versions"]) == 2
+    assert len(entry.options["tariff_versions"][1]["components"]) == 1
+    # Edit date and base energy, then delete the later version without touching the earlier one.
+    result = await options_step(hass, entry, "tariffs")
+    result = await submit(hass, result, {"next_step_id": "edit_tariff"})
+    result = await submit(hass, result, {"effective_from": "2026-11-01"})
+    result = await submit(hass, result, base | {"effective_from": "2026-09-01"})
+    assert result["errors"] == {"base": "invalid_tariff"}
+    result = await submit(hass, result, base | {"energy_adder": 0.2})
+    result = await submit(hass, result, {"next_step_id": "save_tariff"})
+    await hass.async_block_till_done()
+    assert entry.options["tariff_versions"][1]["energy_adder"] == 0.2
+    result = await options_step(hass, entry, "tariffs")
+    result = await submit(hass, result, {"next_step_id": "delete_tariff"})
+    await submit(hass, result, {"effective_from": "2026-11-01"})
+    await hass.async_block_till_done()
+    assert [v["effective_from"] for v in entry.options["tariff_versions"]] == ["2026-09-01"]
+
+
+@pytest.mark.parametrize("step", ["edit_tariff", "delete_tariff"])
+async def test_empty_tariffs_ui(hass, fetch, step):
+    entry = await setup(hass)
+    result = await options_step(hass, entry, "tariffs")
+    result = await submit(hass, result, {"next_step_id": step})
+    assert result["reason"] == "no_tariffs"
+
+
+@pytest.mark.parametrize("step", ["edit_component", "remove_component"])
+async def test_empty_components_ui(hass, fetch, step):
+    entry = await setup(hass)
+    result = await options_step(hass, entry, "tariffs")
+    result = await submit(hass, result, {"next_step_id": "add_tariff"})
+    result = await submit(hass, result, {"effective_from": "2026-09-01", "template": "empty"})
+    result = await submit(
+        hass,
+        result,
+        {
+            "effective_from": "2026-09-01",
+            "energy_multiplier": 1,
+            "energy_adder": 0,
+            "energy_vat": 21,
+        },
+    )
+    result = await submit(hass, result, {"next_step_id": step})
+    assert result["reason"] == "no_components"
+
+
+async def test_no_tariff_coverage_unavailable_total_raw_and_export_unchanged(hass, fetch):
+    from custom_components.opcom_energy.prices import invoice_tariff
+
+    entry = await setup(
+        hass, {"pricing_mode": "components", "tariff_versions": [invoice_tariff("2026-11-01")]}
+    )
+    assert find(hass, "estimated_import_price").state == STATE_UNAVAILABLE
+    assert find(hass, "import_vat_amount").state == STATE_UNAVAILABLE
+    assert find(hass, "import_price_below_threshold").state == STATE_UNAVAILABLE
+    assert find(hass, "cheapest_future_window_price").state == STATE_UNAVAILABLE
+    assert find(hass, "spot_price").state != STATE_UNAVAILABLE
+    imported = await hass.services.async_call(
+        DOMAIN, "get_prices", {"price_type": "import"}, blocking=True, return_response=True
+    )
+    assert imported["complete"] is False
+    assert all(
+        row["price"] is None and row["unavailable_reason"] == "no_tariff"
+        for row in imported["prices"]
+    )
+    exported = await hass.services.async_call(
+        DOMAIN, "get_prices", {"price_type": "export"}, blocking=True, return_response=True
+    )
+    raw = await hass.services.async_call(
+        DOMAIN, "get_prices", {}, blocking=True, return_response=True
+    )
+    assert exported["prices"] == raw["prices"]
+    assert raw["complete"] is True
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            DOMAIN,
+            "get_cheapest_window",
+            {"price_type": "import"},
+            blocking=True,
+            return_response=True,
+        )
+    assert entry.options["pricing_mode"] == "components"
+
+
+async def test_import_schedule_local_midnight_breakdown_and_offline_restart(hass, fetch):
+    from custom_components.opcom_energy.prices import invoice_tariff
+
+    await hass.config.async_set_time_zone("Europe/Bucharest")
+    first = invoice_tariff("2026-09-01")
+    first.update(components=[], energy_vat=0)
+    later = invoice_tariff("2026-10-21")
+    later.update(components=[], energy_vat=0, energy_adder=1)
+    entry = await setup(hass, {"pricing_mode": "components", "tariff_versions": [first, later]})
+    response = await hass.services.async_call(
+        DOMAIN,
+        "get_prices",
+        {"date": "2026-10-21", "price_type": "import"},
+        blocking=True,
+        return_response=True,
+    )
+    assert response["complete"] is True
+    assert response["prices"][0]["start"] == "2026-10-20T21:00:00+00:00"
+    for row in response["prices"]:
+        assert row["breakdown"]["tariff_effective_from"] == "2026-10-21"
+        assert row["breakdown"]["energy_adder"] == 1
+        assert row["price"] == row["breakdown"]["estimated_total"]
+    before = find(hass, "estimated_import_price").state
+    await entry.runtime_data.store.async_save({"days": entry.runtime_data.cache})
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    fetch.side_effect = CannotConnect("offline")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert find(hass, "estimated_import_price").state == before
+    assert entry.runtime_data.options["tariff_versions"] == [first, later]
+
+
+async def test_component_sensors_and_threshold_switch_at_ha_local_midnight(hass, fetch, freezer):
+    from custom_components.opcom_energy.prices import invoice_tariff
+
+    await hass.config.async_set_time_zone("Europe/Bucharest")
+    freezer.move_to("2026-10-20T20:45:00+00:00")
+    first = invoice_tariff("2026-09-01")
+    first.update(components=[], energy_vat=0)
+    later = invoice_tariff("2026-10-21")
+    later.update(components=[], energy_vat=100, energy_adder=10)
+    await setup(
+        hass,
+        {"pricing_mode": "components", "tariff_versions": [first, later], "cheap_threshold": 5},
+    )
+    assert find(hass, "import_price_below_threshold").state == "on"
+    assert find(hass, "estimated_import_price").attributes["tariff_effective_from"] == "2026-09-01"
+    freezer.move_to("2026-10-20T21:00:00+00:00")
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+    spot = float(find(hass, "spot_price").state)
+    assert float(find(hass, "import_base_energy_before_vat").state) == pytest.approx(spot + 10)
+    assert float(find(hass, "import_vat_amount").state) == pytest.approx(spot + 10)
+    assert float(find(hass, "estimated_import_price").state) == pytest.approx((spot + 10) * 2)
+    assert find(hass, "estimated_import_price").attributes["tariff_effective_from"] == "2026-10-21"
+    assert find(hass, "import_price_below_threshold").state == "off"
+
+
+async def test_new_mode_can_save_without_versions_and_reports_missing_coverage(hass, fetch):
+    entry = await setup(hass)
+    result = await options_step(hass, entry, "pricing")
+    await submit(hass, result, {"pricing_mode": "components"})
+    await hass.async_block_till_done()
+    assert find(hass, "estimated_import_price").state == STATE_UNAVAILABLE
+    assert find(hass, "spot_price").state != STATE_UNAVAILABLE
+
+
+async def test_invalid_restored_tariffs_report_setup_error(hass, fetch):
+    from custom_components.opcom_energy.prices import invoice_tariff
+
+    version = invoice_tariff("2026-09-01")
+    version["energy_vat"] = float("inf")
+    entry = MockConfigEntry(domain=DOMAIN, data={}, options={"tariff_versions": [version]})
+    entry.add_to_hass(hass)
+    assert not await hass.config_entries.async_setup(entry.entry_id)
+    assert entry.state is ConfigEntryState.SETUP_ERROR

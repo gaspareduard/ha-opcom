@@ -7,6 +7,7 @@ from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_utc_time_change
 from homeassistant.helpers.storage import Store
@@ -15,7 +16,15 @@ from homeassistant.util import dt as dt_util
 
 from .api import CannotConnect, OpcomClient
 from .const import DEFAULT_OPTIONS, DOMAIN, MARKET_TZ, NAME
-from .prices import NotPublished, PriceError, PriceSlot, current_slot, day_bounds, parse_csv
+from .prices import (
+    NotPublished,
+    PriceError,
+    PriceSlot,
+    current_slot,
+    day_bounds,
+    parse_csv,
+    validate_tariffs,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,6 +37,12 @@ class OpcomCoordinator(DataUpdateCoordinator[tuple[PriceSlot, ...]]):
             hass, _LOGGER, name=NAME, config_entry=entry, update_interval=timedelta(minutes=5)
         )
         self.options = DEFAULT_OPTIONS | dict(entry.options)
+        try:
+            validate_tariffs(self.options.get("tariff_versions", []))
+            if self.options.get("pricing_mode", "simple") not in ("simple", "components"):
+                raise PriceError("Unknown pricing mode")
+        except PriceError as err:
+            raise ConfigEntryError(str(err)) from err
         self.client = OpcomClient(async_get_clientsession(hass))
         self.store = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}")
         self.cache: dict[str, dict] = {}

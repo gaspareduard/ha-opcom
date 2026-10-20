@@ -11,7 +11,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
-from .const import MARKET_TZ, SLOT_LENGTH
+from .const import INVOICE_COMPONENTS, MARKET_TZ, SLOT_LENGTH
 
 
 class PriceError(ValueError):
@@ -20,6 +20,140 @@ class PriceError(ValueError):
 
 class NotPublished(PriceError):
     """The source returned an empty, not-yet-published day."""
+
+
+class TariffUnavailable(PriceError):
+    """No configured tariff covers an interval."""
+
+
+def invoice_tariff(effective_from: str, language: str = "en") -> dict:
+    """Return independent editable starting values, with no private invoice data."""
+    return {
+        "effective_from": effective_from,
+        "energy_multiplier": 1.0,
+        "energy_adder": 0.0,
+        "energy_vat": 21.0,
+        "components": [
+            {
+                "name": ro if language == "ro" else en,
+                "rate": rate,
+                "vat": 21.0,
+                "enabled": True,
+                "vat_verified": en != "CfD contribution",
+            }
+            for en, ro, rate in INVOICE_COMPONENTS
+        ],
+    }
+
+
+def validate_tariffs(versions: list) -> None:
+    """Validate durable user configuration before accepting it."""
+    try:
+        if not isinstance(versions, list) or len(versions) > 100:
+            raise ValueError("Expected at most 100 tariff versions")
+        dates = set()
+        for version in versions:
+            effective = date.fromisoformat(version["effective_from"])
+            if version["effective_from"] != effective.isoformat():
+                raise ValueError("Use an ISO calendar date YYYY-MM-DD")
+            if effective in dates:
+                raise ValueError("Tariff effective dates must be distinct")
+            dates.add(effective)
+            for key, low, high in (
+                ("energy_multiplier", 0, 100),
+                ("energy_adder", -10000, 10000),
+                ("energy_vat", 0, 100),
+            ):
+                value = Decimal(str(version[key]))
+                if not value.is_finite() or not low <= value <= high:
+                    raise ValueError("Invalid base energy settings")
+            components = version["components"]
+            if not isinstance(components, list) or len(components) > 50:
+                raise ValueError("Expected at most 50 components")
+            names = set()
+            for component in components:
+                name = component["name"]
+                if (
+                    not isinstance(name, str)
+                    or not name.strip()
+                    or len(name) > 80
+                    or name.strip().casefold() in names
+                ):
+                    raise ValueError("Component names must be distinct and nonempty")
+                names.add(name.strip().casefold())
+                for key, low, high in (("rate", -10000, 10000), ("vat", 0, 100)):
+                    value = Decimal(str(component[key]))
+                    if not value.is_finite() or not low <= value <= high:
+                        raise ValueError("Invalid component rate or VAT")
+                if not isinstance(component["enabled"], bool) or not isinstance(
+                    component["vat_verified"], bool
+                ):
+                    raise ValueError("Invalid component flags")
+    except (KeyError, TypeError, ValueError, InvalidOperation) as err:
+        raise PriceError(f"Invalid tariff configuration: {err}") from err
+
+
+@dataclass(frozen=True, slots=True)
+class ImportBreakdown:
+    """One interval's decimal values and explanatory component details."""
+
+    base_energy: Decimal
+    charges: Decimal
+    vat: Decimal
+    total: Decimal
+    attributes: dict
+
+
+def import_breakdown(slot: PriceSlot, options: dict, tz: ZoneInfo) -> ImportBreakdown:
+    """Select at interval start in the HA timezone, with no backward fallback."""
+    local_day = slot.start.astimezone(tz).date()
+    version = max(
+        (
+            v
+            for v in options.get("tariff_versions", [])
+            if date.fromisoformat(v["effective_from"]) <= local_day
+        ),
+        key=lambda v: v["effective_from"],
+        default=None,
+    )
+    if version is None:
+        raise TariffUnavailable("No tariff version covers this interval")
+    base = price_kwh(slot, options) * Decimal(str(version["energy_multiplier"])) + Decimal(
+        str(version["energy_adder"])
+    )
+    base_vat = base * Decimal(str(version["energy_vat"])) / 100
+    charges = Decimal(0)
+    vat = base_vat
+    details = []
+    for component in version["components"]:
+        if not component["enabled"]:
+            continue
+        rate = Decimal(str(component["rate"]))
+        tax = rate * Decimal(str(component["vat"])) / 100
+        charges += rate
+        vat += tax
+        details.append({**component, "vat_amount": float(tax)})
+    total = base + charges + vat
+    return ImportBreakdown(
+        base,
+        charges,
+        vat,
+        total,
+        {
+            "pricing_mode": "components",
+            "tariff_effective_from": version["effective_from"],
+            "base_energy": float(base),
+            "additional_charges": float(charges),
+            "vat_amount": float(vat),
+            "estimated_total": float(total),
+            "energy_multiplier": version["energy_multiplier"],
+            "energy_adder": version["energy_adder"],
+            "energy_vat_percent": version["energy_vat"],
+            "energy_vat_amount": float(base_vat),
+            "components": details,
+            "unverified_vat_components": [c["name"] for c in details if not c["vat_verified"]],
+        },
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,24 +257,32 @@ def day_slots(slots: tuple[PriceSlot, ...], day: date, tz: ZoneInfo) -> tuple[Pr
     return selected
 
 
-def price_kwh(slot: PriceSlot, options: dict, kind: str = "spot") -> Decimal:
+def price_kwh(
+    slot: PriceSlot, options: dict, kind: str = "spot", tz: ZoneInfo | None = None
+) -> Decimal:
     """Apply explicit contract parameters; no implicit taxes or tariffs."""
     spot = slot.price / 1000
     if kind == "spot":
         return spot
+    if kind == "import" and options.get("pricing_mode", "simple") == "components":
+        if tz is None:
+            raise PriceError("Component pricing requires the HA timezone")
+        return import_breakdown(slot, options, tz).total
     return spot * Decimal(str(options[f"{kind}_multiplier"])) + Decimal(
         str(options[f"{kind}_adder"])
     )
 
 
-def average_price(slots: tuple[PriceSlot, ...], options: dict, kind: str = "spot") -> Decimal:
+def average_price(
+    slots: tuple[PriceSlot, ...], options: dict, kind: str = "spot", tz: ZoneInfo | None = None
+) -> Decimal:
     """Duration-weighted average, including DST days."""
     seconds = sum((s.end - s.start).total_seconds() for s in slots)
     if not seconds:
         raise PriceError("Cannot average an empty schedule")
     return sum(
         (
-            price_kwh(s, options, kind) * Decimal(str((s.end - s.start).total_seconds()))
+            price_kwh(s, options, kind, tz) * Decimal(str((s.end - s.start).total_seconds()))
             for s in slots
         ),
         Decimal(0),
@@ -161,6 +303,7 @@ def cheapest_window(
     minutes: int,
     options: dict,
     kind: str = "spot",
+    tz: ZoneInfo | None = None,
 ) -> Window | None:
     """Find the global cheapest contiguous complete window; earliest wins ties."""
     if earliest.tzinfo is None or latest.tzinfo is None:
@@ -169,13 +312,29 @@ def cheapest_window(
         raise PriceError("Duration must be 15–1440 minutes in steps of 15")
     earliest, latest = earliest.astimezone(UTC), latest.astimezone(UTC)
     count = minutes // 15
-    candidates = tuple(s for s in slots if s.start >= earliest and s.end <= latest)
+    # Resolve each tariff once. Overlapping long windows must not recalculate
+    # every component for every interval on Home Assistant's event loop.
+    candidates = []
+    weighted_totals = [Decimal(0)]
+    durations = [Decimal(0)]
+    for slot in slots:
+        if slot.start < earliest or slot.end > latest:
+            continue
+        try:
+            value = price_kwh(slot, options, kind, tz)
+        except TariffUnavailable:
+            continue
+        seconds = Decimal(str((slot.end - slot.start).total_seconds()))
+        candidates.append(slot)
+        weighted_totals.append(weighted_totals[-1] + value * seconds)
+        durations.append(durations[-1] + seconds)
     best = None
     for i in range(len(candidates) - count + 1):
         window = candidates[i : i + count]
         if any(a.end != b.start for a, b in zip(window, window[1:], strict=False)):
             continue
-        value = average_price(window, options, kind)
+        end = i + count
+        value = (weighted_totals[end] - weighted_totals[i]) / (durations[end] - durations[i])
         if best is None or value < best.average:
             best = Window(window[0].start, window[-1].end, value)
     return best

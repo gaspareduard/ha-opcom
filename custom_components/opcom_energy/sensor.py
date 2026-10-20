@@ -19,7 +19,16 @@ from homeassistant.util import dt as dt_util
 from . import OpcomConfigEntry
 from .coordinator import OpcomCoordinator
 from .entity import OpcomEntity
-from .prices import average_price, cheapest_window, current_slot, day_slots, percentile, price_kwh
+from .prices import (
+    TariffUnavailable,
+    average_price,
+    cheapest_window,
+    current_slot,
+    day_slots,
+    import_breakdown,
+    percentile,
+    price_kwh,
+)
 
 PARALLEL_UPDATES = 0
 
@@ -27,6 +36,9 @@ PRICE_KEYS = (
     "spot_price",
     "next_spot_price",
     "import_price",
+    "import_base_energy",
+    "import_additional_charges",
+    "import_vat",
     "export_price",
     "today_average",
     "today_min",
@@ -118,7 +130,13 @@ class OpcomSensor(OpcomEntity, SensorEntity):
             return SensorReading(self.coordinator.last_success)
         if key.startswith("cheapest_window"):
             window = cheapest_window(
-                rows, now, now + timedelta(hours=48), options["window_minutes"], options, "import"
+                rows,
+                now,
+                now + timedelta(hours=48),
+                options["window_minutes"],
+                options,
+                "import",
+                self.coordinator.local_tz,
             )
             if window is None:
                 return SensorReading()
@@ -176,6 +194,20 @@ class OpcomSensor(OpcomEntity, SensorEntity):
             "source": "opcom.ro",
             "market_timezone": "Europe/Berlin",
         }
+        if key.startswith("import") and options.get("pricing_mode", "simple") == "components":
+            try:
+                breakdown = import_breakdown(slot, options, self.coordinator.local_tz)
+            except TariffUnavailable:
+                return SensorReading()
+            value = {
+                "import_price": breakdown.total,
+                "import_base_energy": breakdown.base_energy,
+                "import_additional_charges": breakdown.charges,
+                "import_vat": breakdown.vat,
+            }[key]
+            return SensorReading(value, attrs | breakdown.attributes)
+        if key in ("import_base_energy", "import_additional_charges", "import_vat"):
+            return SensorReading()
         if key.startswith(("import", "export")):
             kind = key.removesuffix("_price")
             attrs.update(

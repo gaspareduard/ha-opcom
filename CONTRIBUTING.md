@@ -9,3 +9,5 @@ New source formats need sanitized public fixtures. Test normal days, both DST tr
 Report issues with HA and integration versions, timezone and diagnostics. Never include HA tokens, supplier credentials or private configuration backups. New device-control features require explicit scope, separate configuration and tests; the pricing integration currently only provides advisory data.
 
 Release procedure: update the version in `manifest.json`, `const.py`, `pyproject.toml` and the changelog; refresh `uv.lock`; pass all CI checks, then publish a GitHub release against that validated commit. Submit HACS default-directory changes only after the public repository validators pass and a full release exists.
+
+Tariff terminology is defined in `GLOSSARY.md`; mode isolation and effective-date semantics are recorded in `docs/adr/0001-effective-dated-optional-tariffs.md`. Keep tariff arithmetic and validation in `prices.py`. New import-price consumers must use the shared tariff-aware resolver with the HA timezone and preserve missing-coverage behavior. UI edits must not reinterpret legacy settings or publish private invoice/account information.

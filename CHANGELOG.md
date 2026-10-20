@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0
+
+- Add an optional component-based import tariff mode, with separate before-VAT energy settings and editable per-component charges and VAT. Existing simple-mode and export formulas remain unchanged.
+- Add effective-dated tariff versions, selected at each interval's start using Home Assistant local midnight; versions and configuration persist across restarts.
+- Add explicit opt-in September 2026 invoice starting values, with CfD VAT marked unverified. No private invoice or account data is included.
+- Add current base-energy, additional-charge and VAT sensors; expose full breakdowns on estimated import prices and import schedule action responses.
+- Apply the selected version consistently to import prices, thresholds and cheapest-window planning. Missing tariff coverage is unavailable, never silently zero or raw spot.
+- Add English/Romanian UI flows for pricing mode, version management and component add/edit/remove; retain saved simple-mode settings when switching modes.
+- Add 30 regression tests for invoice arithmetic, tax edits, local midnight/DST, future changes, missing coverage, configuration flows and offline restart.
+- Resolve interval tariffs once when searching overlapping planning windows to reduce work on the HA event loop.
+
 ## 1.0.1
 
 - Use the shared price conversion helper for every published daily schedule.

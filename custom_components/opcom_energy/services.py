@@ -9,7 +9,15 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
-from .prices import PriceError, cheapest_window, day_bounds, day_slots, price_kwh
+from .prices import (
+    PriceError,
+    TariffUnavailable,
+    cheapest_window,
+    day_bounds,
+    day_slots,
+    import_breakdown,
+    price_kwh,
+)
 
 
 @callback
@@ -34,21 +42,28 @@ def async_setup_services(hass: HomeAssistant) -> None:
         start, end = day_bounds(day, coord.local_tz)
         rows = tuple(s for s in (coord.data or ()) if s.start < end and s.end > start)
         kind = call.data["price_type"]
+        prices = []
+        covered = True
+        for slot in rows:
+            record = {"start": slot.start.isoformat(), "end": slot.end.isoformat()}
+            try:
+                record["price"] = float(price_kwh(slot, coord.options, kind, coord.local_tz))
+                if kind == "import" and coord.options.get("pricing_mode") == "components":
+                    record["breakdown"] = import_breakdown(
+                        slot, coord.options, coord.local_tz
+                    ).attributes
+            except TariffUnavailable:
+                record.update(price=None, unavailable_reason="no_tariff")
+                covered = False
+            prices.append(record)
         return {
             "date": day.isoformat(),
             "timezone": hass.config.time_zone,
             "currency": "RON",
             "unit": "RON/kWh",
             "price_type": kind,
-            "complete": bool(day_slots(coord.data or (), day, coord.local_tz)),
-            "prices": [
-                {
-                    "start": s.start.isoformat(),
-                    "end": s.end.isoformat(),
-                    "price": float(price_kwh(s, coord.options, kind)),
-                }
-                for s in rows
-            ],
+            "complete": covered and bool(day_slots(coord.data or (), day, coord.local_tz)),
+            "prices": prices,
         }
 
     async def get_cheapest_window(call: ServiceCall) -> dict:
@@ -72,7 +87,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         kind = call.data["price_type"]
         try:
             result = cheapest_window(
-                coord.data or (), earliest, latest, minutes, coord.options, kind
+                coord.data or (), earliest, latest, minutes, coord.options, kind, coord.local_tz
             )
         except PriceError as err:
             raise ServiceValidationError(str(err)) from err
