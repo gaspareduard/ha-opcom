@@ -20,7 +20,14 @@ from homeassistant.util import dt as dt_util
 
 from .api import CannotConnect, OpcomClient
 from .const import DEFAULT_OPTIONS, DOMAIN, MARKET_TZ, NAME
-from .prices import PriceError, invoice_tariff, parse_csv, validate_options, validate_tariffs
+from .prices import (
+    PriceError,
+    invoice_tariff,
+    parse_csv,
+    validate_options,
+    validate_tariffs,
+    yellowgrid_tariff,
+)
 
 
 def select(values):
@@ -140,9 +147,11 @@ class OpcomOptionsFlow(OptionsFlow):
                 errors["base"] = "duplicate_date"
             else:
                 self._original_date = None
-                self._version = invoice_tariff(
-                    user_input["effective_from"], self.hass.config.language
-                )
+                self._version = (
+                    yellowgrid_tariff
+                    if user_input["template"] == "yellowgrid_chart"
+                    else invoice_tariff
+                )(user_input["effective_from"], self.hass.config.language)
                 if user_input["template"] == "empty":
                     self._version["components"] = []
                 return await self.async_step_version()
@@ -152,7 +161,9 @@ class OpcomOptionsFlow(OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Required("effective_from"): DateSelector(),
-                    vol.Required("template", default="empty"): select(["empty", "invoice_2026_09"]),
+                    vol.Required("template", default="yellowgrid_chart"): select(
+                        ["yellowgrid_chart", "empty", "invoice_2026_09"]
+                    ),
                 }
             ),
         )
@@ -219,6 +230,18 @@ class OpcomOptionsFlow(OptionsFlow):
                         -10000, 10000
                     ),
                     vol.Required("energy_vat", default=defaults["energy_vat"]): number(0, 100),
+                    **(
+                        {
+                            vol.Required(key, default=defaults[key]): number(0, high)
+                            for key, high in (
+                                ("import_cap", 10000),
+                                ("export_floor", 10000),
+                                ("commission", 100),
+                            )
+                        }
+                        if defaults.get("energy_model") == "yellowgrid"
+                        else {}
+                    ),
                 }
             ),
         )

@@ -159,3 +159,95 @@ def test_romanian_invoice_component_names_and_tax_warning():
     result = import_breakdown(slot(), options(version), RO)
     assert result.attributes["unverified_vat_components"] == ["Contribuție CfD"]
     assert version["components"][0]["name"] == "Extragere din rețea"
+
+
+@pytest.mark.parametrize(
+    ("spot_value", "base", "export"),
+    [
+        ("2500", ".55", "2"),
+        ("550", ".55", ".5375"),
+        ("400", ".4375", ".5"),
+        ("-1000", "-.6125", ".5"),
+    ],
+)
+def test_yellowgrid_cap_commission_floor_and_invoice_separation(spot_value, base, export):
+    from custom_components.opcom_energy.prices import yellowgrid_tariff
+
+    version = yellowgrid_tariff("2026-09-01")
+    validate_tariffs([version])
+    config = options(version)
+    result = import_breakdown(slot(price=spot_value), config, RO)
+    assert result.base_energy == Decimal(base)
+    assert result.charges == Decimal(".5354032")
+    assert result.total == (Decimal(base) + Decimal(".5354032")) * Decimal("1.21")
+    assert price_kwh(slot(price=spot_value), config, "export", RO) == Decimal(export)
+    assert price_kwh(slot(price=spot_value), config) == Decimal(spot_value) / 1000
+    assert sum(
+        Decimal(str(c["rate"])) for c in invoice_tariff("2026-09-01")["components"]
+    ) == Decimal(".4648832")
+    config["pricing_mode"] = "simple"
+    assert price_kwh(slot(price=spot_value), config, "import", RO) == Decimal(spot_value) / 1000
+    assert price_kwh(slot(price=spot_value), config, "export", RO) == Decimal(spot_value) / 1000
+
+
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        ("commission", 101),
+        ("commission", -1),
+        ("import_cap", float("nan")),
+        ("export_floor", -1),
+        ("energy_model", "unknown"),
+    ],
+)
+def test_yellowgrid_invalid_parameters(key, value):
+    from custom_components.opcom_energy.prices import yellowgrid_tariff
+
+    version = yellowgrid_tariff("2026-09-01")
+    version[key] = value
+    with pytest.raises(PriceError):
+        validate_tariffs([version])
+
+
+def test_yellowgrid_effective_export_and_missing_coverage():
+    from custom_components.opcom_energy.prices import yellowgrid_tariff
+
+    first = yellowgrid_tariff("2026-09-01", "ro")
+    later = yellowgrid_tariff("2026-10-21")
+    later.update(export_floor=0.6, import_cap=0.7, commission=50)
+    config = options(first, later)
+    assert price_kwh(slot("2026-10-20T20:45:00+00:00", "2500"), config, "export", RO) == 2
+    assert price_kwh(slot("2026-10-20T21:00:00+00:00", "2500"), config, "export", RO) == Decimal(
+        "1.55"
+    )
+    assert import_breakdown(
+        slot("2026-10-20T21:00:00+00:00", "2500"), config, RO
+    ).base_energy == Decimal(".7")
+    with pytest.raises(TariffUnavailable):
+        price_kwh(slot("2026-08-01T00:00:00+00:00"), config, "export", RO)
+    with pytest.raises(PriceError):
+        price_kwh(slot(), config, "export")
+    assert first["components"][2]["name"] == "Distribuție Delgaz (estimare grafic)"
+    first["commission"] = 100
+    assert price_kwh(slot(price="2500"), options(first), "export", RO) == Decimal(".5")
+    assert import_breakdown(slot(price="-1000"), options(first), RO).base_energy == Decimal(".55")
+    first["commission"] = 0
+    assert price_kwh(slot(price="2500"), options(first), "export", RO) == Decimal("2.5")
+    assert import_breakdown(slot(price="-1000"), options(first), RO).base_energy == -1
+
+
+def test_yellowgrid_planning_uses_cap_not_raw_order():
+    from custom_components.opcom_energy.prices import yellowgrid_tariff
+
+    at = datetime(2026, 10, 20, 12, tzinfo=UTC)
+    rows = tuple(
+        PriceSlot(at + i * timedelta(minutes=15), at + (i + 1) * timedelta(minutes=15), Decimal(p))
+        for i, p in enumerate([2500, 1000])
+    )
+    config = options(yellowgrid_tariff("2026-09-01"))
+    result = cheapest_window(rows, at, rows[-1].end, 15, config, "import", RO)
+    assert result.start == at  # Both capped imports tie; raw spot would prefer the second.
+    assert result.average == Decimal("1.313337872")
+    result = cheapest_window(rows, at, rows[-1].end, 15, config, "export", RO)
+    assert result.start == rows[1].start
+    assert result.average == Decimal(".875")

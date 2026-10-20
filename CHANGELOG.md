@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- Add an optional editable YellowGrid pricing model: capped import active energy, export floor and supplier commission, all effective-dated in HA local time.
+- Default new tariff creation to a clearly labelled YellowGrid chart-estimate preset using public offer parameters and the Delgaz distribution example; retain invoice-only and empty presets and all existing saved settings.
+- Explain the 20 October comparison: export closely matches OPCOM after commission; chart import matches 1.31334 RON/kWh with Delgaz distribution, while invoice distribution gives 1.22801. Operator selection remains unconfirmed and editable.
+- Apply the shared model to sensors, schedules, thresholds and window planning, with supplier parameters exposed in entity attributes and import breakdowns.
+- Preserve raw OPCOM prices, legacy Simple mode and linear tariff versions; add regression coverage for negative prices, caps, floors, commission extremes, effective dates, UI and action responses.
+
 ## 1.1.0
 
 - Add an optional component-based import tariff mode, with separate before-VAT energy settings and editable per-component charges and VAT. Existing simple-mode and export formulas remain unchanged.

@@ -628,3 +628,69 @@ async def test_invalid_restored_tariffs_report_setup_error(hass, fetch):
     entry.add_to_hass(hass)
     assert not await hass.config_entries.async_setup(entry.entry_id)
     assert entry.state is ConfigEntryState.SETUP_ERROR
+
+
+async def test_yellowgrid_ui_sensors_and_actions(hass, fetch):
+    entry = await setup(hass)
+    result = await options_step(hass, entry, "tariffs")
+    result = await submit(hass, result, {"next_step_id": "add_tariff"})
+    template_key = next(k for k in result["data_schema"].schema if str(k) == "template")
+    assert template_key.default() == "yellowgrid_chart"
+    result = await submit(
+        hass, result, {"effective_from": "2026-09-01", "template": "yellowgrid_chart"}
+    )
+    result = await submit(
+        hass,
+        result,
+        {
+            "effective_from": "2026-09-01",
+            "energy_multiplier": 1,
+            "energy_adder": 0,
+            "energy_vat": 21,
+            "import_cap": 0.55,
+            "export_floor": 0.5,
+            "commission": 25,
+        },
+    )
+    await submit(hass, result, {"next_step_id": "save_tariff"})
+    await hass.async_block_till_done()
+    result = await options_step(hass, entry, "pricing")
+    await submit(hass, result, {"pricing_mode": "components"})
+    await hass.async_block_till_done()
+    assert float(find(hass, "estimated_import_price").state) == pytest.approx(1.313337872)
+    assert find(hass, "estimated_import_price").attributes["import_cap"] == 0.55
+    # The export sensor is disabled by default; enable it as a user would.
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    export_entry = next(
+        e for e in registry.entities.values() if e.translation_key == "export_price"
+    )
+    registry.async_update_entity(export_entry.entity_id, disabled_by=None)
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    spot = float(find(hass, "spot_price").state)
+    exported = find(hass, "estimated_export_price")
+    assert float(exported.state) == pytest.approx(max(0.5, 0.75 * spot + 0.125))
+    assert exported.attributes["commission"] == 25
+    assert "multiplier" not in exported.attributes
+    for kind in ("import", "export"):
+        response = await hass.services.async_call(
+            DOMAIN,
+            "get_prices",
+            {"date": "2026-10-20", "price_type": kind},
+            blocking=True,
+            return_response=True,
+        )
+        assert response["complete"]
+        for row in response["prices"]:
+            if kind == "import":
+                assert row["price"] == pytest.approx(1.313337872)
+                assert row["breakdown"]["energy_model"] == "yellowgrid"
+            else:
+                source = next(
+                    s for s in entry.runtime_data.data if s.start.isoformat() == row["start"]
+                )
+                assert row["price"] == pytest.approx(
+                    max(0.5, 0.75 * float(source.price) / 1000 + 0.125)
+                )

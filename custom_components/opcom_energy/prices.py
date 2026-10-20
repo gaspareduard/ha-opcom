@@ -46,6 +46,27 @@ def invoice_tariff(effective_from: str, language: str = "en") -> dict:
     }
 
 
+def yellowgrid_tariff(effective_from: str, language: str = "en") -> dict:
+    """Editable public-offer model, with the chart-consistent Delgaz example."""
+    version = invoice_tariff(effective_from, language)
+    version.update(energy_model="yellowgrid", import_cap=0.55, export_floor=0.5, commission=25.0)
+    # Public offer combines all distribution voltage levels into one charge.
+    version["components"] = [c for i, c in enumerate(version["components"]) if i not in (2, 3, 4)]
+    version["components"].insert(
+        2,
+        {
+            "name": "Distribuție Delgaz (estimare grafic)"
+            if language == "ro"
+            else "Delgaz distribution (chart estimate)",
+            "rate": 0.38791,
+            "vat": 21.0,
+            "enabled": True,
+            "vat_verified": True,
+        },
+    )
+    return version
+
+
 def validate_tariffs(versions: list) -> None:
     """Validate durable user configuration before accepting it."""
     try:
@@ -67,6 +88,18 @@ def validate_tariffs(versions: list) -> None:
                 value = Decimal(str(version[key]))
                 if not value.is_finite() or not low <= value <= high:
                     raise ValueError("Invalid base energy settings")
+            model = version.get("energy_model", "linear")
+            if model not in ("linear", "yellowgrid"):
+                raise ValueError("Unknown energy model")
+            if model == "yellowgrid":
+                for key, high in (
+                    ("import_cap", 10000),
+                    ("export_floor", 10000),
+                    ("commission", 100),
+                ):
+                    value = Decimal(str(version[key]))
+                    if not value.is_finite() or not 0 <= value <= high:
+                        raise ValueError("Invalid supplier cap, floor or commission")
             components = version["components"]
             if not isinstance(components, list) or len(components) > 50:
                 raise ValueError("Expected at most 50 components")
@@ -106,21 +139,13 @@ class ImportBreakdown:
 
 def import_breakdown(slot: PriceSlot, options: dict, tz: ZoneInfo) -> ImportBreakdown:
     """Select at interval start in the HA timezone, with no backward fallback."""
-    local_day = slot.start.astimezone(tz).date()
-    version = max(
-        (
-            v
-            for v in options.get("tariff_versions", [])
-            if date.fromisoformat(v["effective_from"]) <= local_day
-        ),
-        key=lambda v: v["effective_from"],
-        default=None,
-    )
-    if version is None:
-        raise TariffUnavailable("No tariff version covers this interval")
-    base = price_kwh(slot, options) * Decimal(str(version["energy_multiplier"])) + Decimal(
-        str(version["energy_adder"])
-    )
+    version = tariff_version(slot, options, tz)
+    spot = price_kwh(slot, options)
+    if version.get("energy_model") == "yellowgrid":
+        cap = Decimal(str(version["import_cap"]))
+        commission = Decimal(str(version["commission"])) / 100
+        spot = min(cap, spot + (cap - spot) * commission)
+    base = spot * Decimal(str(version["energy_multiplier"])) + Decimal(str(version["energy_adder"]))
     base_vat = base * Decimal(str(version["energy_vat"])) / 100
     charges = Decimal(0)
     vat = base_vat
@@ -146,6 +171,8 @@ def import_breakdown(slot: PriceSlot, options: dict, tz: ZoneInfo) -> ImportBrea
             "additional_charges": float(charges),
             "vat_amount": float(vat),
             "estimated_total": float(total),
+            "energy_model": version.get("energy_model", "linear"),
+            **{k: version[k] for k in ("import_cap", "commission") if k in version},
             "energy_multiplier": version["energy_multiplier"],
             "energy_adder": version["energy_adder"],
             "energy_vat_percent": version["energy_vat"],
@@ -154,6 +181,23 @@ def import_breakdown(slot: PriceSlot, options: dict, tz: ZoneInfo) -> ImportBrea
             "unverified_vat_components": [c["name"] for c in details if not c["vat_verified"]],
         },
     )
+
+
+def tariff_version(slot: PriceSlot, options: dict, tz: ZoneInfo) -> dict:
+    """Find the effective version at the interval's local start."""
+    local_day = slot.start.astimezone(tz).date()
+    version = max(
+        (
+            v
+            for v in options.get("tariff_versions", [])
+            if date.fromisoformat(v["effective_from"]) <= local_day
+        ),
+        key=lambda v: v["effective_from"],
+        default=None,
+    )
+    if version is None:
+        raise TariffUnavailable("No tariff version covers this interval")
+    return version
 
 
 @dataclass(frozen=True, slots=True)
@@ -268,6 +312,18 @@ def price_kwh(
         if tz is None:
             raise PriceError("Component pricing requires the HA timezone")
         return import_breakdown(slot, options, tz).total
+    if (
+        kind == "export"
+        and options.get("pricing_mode", "simple") == "components"
+        and any(v.get("energy_model") == "yellowgrid" for v in options.get("tariff_versions", []))
+    ):
+        if tz is None:
+            raise PriceError("Supplier pricing requires the HA timezone")
+        version = tariff_version(slot, options, tz)
+        if version.get("energy_model") == "yellowgrid":
+            floor = Decimal(str(version["export_floor"]))
+            retained = 1 - Decimal(str(version["commission"])) / 100
+            return max(floor, floor + (spot - floor) * retained)
     return spot * Decimal(str(options[f"{kind}_multiplier"])) + Decimal(
         str(options[f"{kind}_adder"])
     )

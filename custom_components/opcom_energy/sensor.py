@@ -28,6 +28,7 @@ from .prices import (
     import_breakdown,
     percentile,
     price_kwh,
+    tariff_version,
 )
 
 PARALLEL_UPDATES = 0
@@ -219,7 +220,33 @@ class OpcomSensor(OpcomEntity, SensorEntity):
             )
         else:
             kind = "spot"
-        value = slot.price if key == "spot_price_mwh" else price_kwh(slot, options, kind)
+        try:
+            value = (
+                slot.price
+                if key == "spot_price_mwh"
+                else price_kwh(slot, options, kind, self.coordinator.local_tz)
+            )
+            if (
+                kind == "export"
+                and options.get("pricing_mode") == "components"
+                and any(
+                    v.get("energy_model") == "yellowgrid"
+                    for v in options.get("tariff_versions", [])
+                )
+            ):
+                version = tariff_version(slot, options, self.coordinator.local_tz)
+                if version.get("energy_model") == "yellowgrid":
+                    attrs.pop("multiplier", None)
+                    attrs.pop("adder_ron_kwh", None)
+                    attrs.update(
+                        formula="max(floor, floor + (spot_ron_kwh - floor) * (1 - commission / 100))",
+                        export_floor=version["export_floor"],
+                        commission=version["commission"],
+                        tariff_effective_from=version["effective_from"],
+                        energy_model="yellowgrid",
+                    )
+        except TariffUnavailable:
+            return SensorReading()
         return SensorReading(value, attrs)
 
     @property

@@ -33,7 +33,7 @@ estimated total = 0.726 RON/kWh
 
 If the component is non-taxable, set its VAT to 0: VAT becomes 0.105 and the total becomes 0.705. If the component is disabled, the total becomes 0.605. Decimal precision is retained internally; display and invoice line-item rounding may differ.
 
-The September invoice example adds nine components totalling 0.4648832 RON/kWh before VAT. Its VAT starting assumption is 21%; CfD is explicitly marked unverified. Keep or change this only according to the applicable contract/tax treatment. The invoice's monthly average energy rate is not a fixed replacement for interval spot prices. Exact supplier caps, floors and commission rules are outside this release.
+The September invoice example adds nine components totalling 0.4648832 RON/kWh before VAT. Its VAT starting assumption is 21%; CfD is explicitly marked unverified. Keep or change this only according to the applicable contract/tax treatment. The invoice's monthly average energy rate is not a fixed replacement for interval spot prices. The separate YellowGrid preset below adds supplier caps, floors and commission rules.
 
 ## Read the breakdown
 
@@ -46,3 +46,24 @@ Attributes include `tariff_effective_from`, `base_energy`, `additional_charges`,
 Raw daily average/min/max and percentile sensors retain their wholesale meaning. Import thresholds and import-price window planning use the selected import-pricing mode. Export pricing never inherits import network charges.
 
 These are marginal price estimates. Fixed subscriptions, meter-energy accounting, monthly invoice totals, supplier-rate discovery and automatic equipment control are outside v1.1. No private invoice PDF, meter identifiers or account details are included in the integration.
+
+## YellowGrid chart estimate (v1.2)
+
+Adding a version now offers **YellowGrid — 20 October chart estimate (editable)** as the default starting choice. It still requires saving a dated version and explicitly enabling Components mode. Existing saved versions and Simple mode are unchanged. The invoice-only and empty presets remain available.
+
+The [supplier’s published offer](https://www.yellowgrid.ro/legislatie-si-contracte), “Ofertă de Agregare și Furnizare Preț Dinamic”, valid 1 September–30 November 2026, supplies these editable starting parameters: import active-energy cap **0.55 RON/kWh**, export floor **0.50 RON/kWh**, commission **25%**. With `s = raw OPCOM RON/kWh` and `c = commission / 100`:
+
+```text
+import energy = min(cap, s + (cap - s) * c)
+base before VAT = import energy * energy_multiplier + energy_adder
+import total = base + enabled charges + their configured VAT
+export estimate = max(floor, floor + (s - floor) * (1 - c))
+```
+
+Export has no import VAT or network fees. The same dated version selects the import cap, export floor, commission and charges at HA-local midnight. In Components mode, once any YellowGrid version is configured, export also requires a covering version; a covered linear version uses the saved simple export formula. Simple mode always uses its original saved import/export formulas. This models marginal displayed prices, not a settlement or benefits ledger.
+
+For the 20 October 2026 chart, all 96 quarter-hours (00:00–23:45 Europe/Bucharest, assembled from the 19 and 20 October OPCOM market-day CSVs) closely follow `0.75*s + 0.125` for export. For example, at 09:00 OPCOM is 2.5 and export is 2.0 RON/kWh. The export root-mean-square discrepancy against chart pixels was approximately 0.004 RON/kWh (maximum 0.009). Raster readings have several thousandths of a RON/kWh uncertainty; exact tooltip values were not available. This supports the export rule but does not test its floor on that high-price day.
+
+Import appears flat around **1.31 RON/kWh**. The invoice charges total **0.4648832** before VAT; using the public 0.55 energy cap and 21% VAT gives **1.228008672**, which does **not** match that chart. The public offer’s Delgaz distribution rate **0.38791**, replacing the invoice’s combined IT/MT/JT **0.31739**, gives charges **0.5354032** and total **1.313337872**. All comparable OPCOM intervals exceed the cap, explaining the flat import bars.
+
+Accordingly, the chart preset uses one explicitly named **Delgaz distribution (chart estimate)** component, instead of inventing a split across voltage levels. Other charges and VAT start from the invoice example. The supplier’s illustrative table independently gives the same Delgaz total. This is evidence for a chart match, **not confirmation that Delgaz is your contracted operator**: your invoice supports a different distribution rate. Check your account’s selected tariff/region or contract before treating the chart preset as a billing estimate. To use your invoice distribution instead, choose the invoice preset, or replace this distribution component with your applicable rates. Every parameter remains editable; CfD VAT stays marked unverified.

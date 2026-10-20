@@ -19,7 +19,7 @@
     "step": {
       "simple": {
         "title": "Opțiuni tarif și planificare",
-        "description": "Fiecare tarif: preț spot RON/kWh × multiplicator + adaos. Implicit este prețul angro. Introdu parametrii contractului; taxele nu sunt presupuse. Ferestrele folosesc formula de import; percentila folosește prețul spot. Aceste setări de import se aplică doar modului simplu; salvarea nu schimbă modul activ. Setările de export și planificare se aplică în ambele moduri.",
+        "description": "Fiecare tarif: preț spot RON/kWh × multiplicator + adaos. Implicit este prețul angro. Introdu parametrii contractului; taxele nu sunt presupuse. Ferestrele folosesc formula de import; percentila folosește prețul spot. Aceste setări de import se aplică doar modului simplu; salvarea nu schimbă modul activ. Setările de export și planificare se aplică în ambele moduri. Modelul YellowGrid dintr-o versiune activă are prioritate asupra formulei simple de export.",
         "data": {
           "import_adder": "Adaos import (RON/kWh)",
           "import_multiplier": "Multiplicator import",
@@ -56,7 +56,7 @@
       },
       "add_tariff": {
         "title": "Adaugă versiune tarifară",
-        "description": "Alege explicit data. Valorile din factura septembrie 2026 sunt orientative și editabile, nu un tarif universal YellowGrid. TVA CfD trebuie verificat.",
+        "description": "Presetul YellowGrid reproduce estimativ graficul din 20 octombrie: plafon import 0,55, prag export 0,50, comision 25% și distribuție Delgaz 0,38791 RON/kWh. Distribuția este dedusă din grafic, nu confirmată pentru contractul dvs. Alegeți separat factura pentru tarifele din factură. Verificați TVA CfD.",
         "data": {
           "effective_from": "Data de început",
           "template": "Valori inițiale"
@@ -78,12 +78,15 @@
       },
       "version": {
         "title": "Energia înainte de TVA",
-        "description": "Energie = OPCOM × multiplicator + adaos, înainte de TVA. Nu copia aici setările simple dacă ele includ deja TVA sau tarife de rețea. TVA este procent, de exemplu 21.",
+        "description": "Model liniar: OPCOM × multiplicator + adaos. Model YellowGrid: energia importată este min(plafon, OPCOM + (plafon − OPCOM) × comision/100), apoi multiplicatorul și adaosul, înainte de TVA. Exportul folosește pragul și comisionul, fără tarifele de import.",
         "data": {
           "effective_from": "Data de început",
           "energy_multiplier": "Multiplicator energie înainte de TVA",
           "energy_adder": "Adaos energie înainte de TVA (RON/kWh)",
-          "energy_vat": "TVA energie (%)"
+          "energy_vat": "TVA energie (%)",
+          "import_cap": "Plafon energie importată înainte de TVA (RON/kWh)",
+          "export_floor": "Prag minim export (RON/kWh)",
+          "commission": "Comision furnizor (%)"
         }
       },
       "tariff_details": {
@@ -242,7 +245,8 @@
         "simple": "Simplu",
         "components": "Componente",
         "empty": "Gol (fără componente)",
-        "invoice_2026_09": "Factură septembrie 2026 (editabilă)"
+        "invoice_2026_09": "Factură septembrie 2026 (editabilă)",
+        "yellowgrid_chart": "YellowGrid — estimare grafic 20 octombrie (editabil)"
       }
     }
   }

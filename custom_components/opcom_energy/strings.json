@@ -19,7 +19,7 @@
     "step": {
       "simple": {
         "title": "Tariff and planning options",
-        "description": "Each tariff is: spot RON/kWh × multiplier + adder. Defaults equal wholesale spot prices. Enter your own contract parameters; taxes and fees are never assumed. Cheapest windows use the import formula; cheap percentile uses spot prices. These import settings apply only in simple mode; saving does not switch the active mode. Export and planning settings apply in both modes.",
+        "description": "Each tariff is: spot RON/kWh × multiplier + adder. Defaults equal wholesale spot prices. Enter your own contract parameters; taxes and fees are never assumed. Cheapest windows use the import formula; cheap percentile uses spot prices. These import settings apply only in simple mode; saving does not switch the active mode. Export and planning settings apply in both modes. An active YellowGrid tariff version overrides the simple export formula.",
         "data": {
           "import_adder": "Import adder (RON/kWh)",
           "import_multiplier": "Import multiplier",
@@ -56,7 +56,7 @@
       },
       "add_tariff": {
         "title": "Add tariff version",
-        "description": "Choose the date explicitly. The September 2026 invoice values are editable starting values, not a universal YellowGrid tariff. Verify CfD VAT treatment.",
+        "description": "The YellowGrid chart estimate uses import cap 0.55, export floor 0.50, commission 25% and Delgaz distribution 0.38791 RON/kWh. Distribution is inferred from the chart, not confirmed for your contract. Choose the invoice preset separately for invoice rates. Verify CfD VAT.",
         "data": {
           "effective_from": "Effective start date",
           "template": "Starting values"
@@ -78,12 +78,15 @@
       },
       "version": {
         "title": "Before-VAT energy settings",
-        "description": "Energy = OPCOM × multiplier + adder, before VAT. Do not copy simple-mode settings here if they already include VAT or network charges. VAT is a percentage, for example 21.",
+        "description": "Linear model: OPCOM × multiplier + adder. YellowGrid: import energy is min(cap, OPCOM + (cap − OPCOM) × commission/100), then multiplier and adder, before VAT. Export uses the floor and commission without import charges.",
         "data": {
           "effective_from": "Effective start date",
           "energy_multiplier": "Before-VAT energy multiplier",
           "energy_adder": "Before-VAT energy adder (RON/kWh)",
-          "energy_vat": "Energy VAT (%)"
+          "energy_vat": "Energy VAT (%)",
+          "import_cap": "Import energy cap before VAT (RON/kWh)",
+          "export_floor": "Export floor (RON/kWh)",
+          "commission": "Supplier commission (%)"
         }
       },
       "tariff_details": {
@@ -242,7 +245,8 @@
         "simple": "Simple",
         "components": "Components",
         "empty": "Empty (no components)",
-        "invoice_2026_09": "September 2026 invoice (editable)"
+        "invoice_2026_09": "September 2026 invoice (editable)",
+        "yellowgrid_chart": "YellowGrid — 20 October chart estimate (editable)"
       }
     }
   }
