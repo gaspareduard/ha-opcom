@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2
+
+- Fix HTTP 403 failures after the first public OPCOM CSV download: use a cookie-free HA-managed session with shared connectors, rather than replaying cookies set by the export endpoint. Preserve TLS verification, validation and retry behavior.
+- Release temporary config-flow sessions immediately; HA cleans up coordinator sessions on entry unload and shutdown.
+- Add a local HTTP regression replay that sets cookies and rejects their reuse, reproducing the multi-download failure before the fix.
+
 ## 1.2.1
 
 - Add an editable final import ceiling of 1.31 RON/kWh to newly created YellowGrid presets, following user confirmation that this cap includes charges and VAT. Keep the export floor at 0.50 RON/kWh.

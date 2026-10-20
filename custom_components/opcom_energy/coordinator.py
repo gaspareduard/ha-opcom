@@ -8,13 +8,12 @@ from zoneinfo import ZoneInfo
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_utc_time_change
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
-from .api import CannotConnect, OpcomClient
+from .api import CannotConnect, async_create_client
 from .const import DEFAULT_OPTIONS, DOMAIN, MARKET_TZ, NAME
 from .prices import (
     NotPublished,
@@ -43,7 +42,7 @@ class OpcomCoordinator(DataUpdateCoordinator[tuple[PriceSlot, ...]]):
                 raise PriceError("Unknown pricing mode")
         except PriceError as err:
             raise ConfigEntryError(str(err)) from err
-        self.client = OpcomClient(async_get_clientsession(hass))
+        self.client = async_create_client(hass)
         self.store = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}")
         self.cache: dict[str, dict] = {}
         self.parsed: dict[str, tuple[PriceSlot, ...]] = {}

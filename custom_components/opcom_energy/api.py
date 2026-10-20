@@ -2,10 +2,20 @@
 
 from datetime import date
 
-from aiohttp import ClientError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientSession, ClientTimeout, DummyCookieJar
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .const import CSV_URL, VERSION
 from .prices import NotPublished, PriceError
+
+
+@callback
+def async_create_client(hass: HomeAssistant, *, auto_cleanup: bool = True) -> OpcomClient:
+    """Use HA-managed TLS/connections without retaining public-export cookies."""
+    return OpcomClient(
+        async_create_clientsession(hass, auto_cleanup=auto_cleanup, cookie_jar=DummyCookieJar())
+    )
 
 
 class CannotConnect(Exception):
@@ -13,7 +23,7 @@ class CannotConnect(Exception):
 
 
 class OpcomClient:
-    """Use HA's shared session and normal TLS verification."""
+    """Use an HA-managed session and normal TLS verification."""
 
     def __init__(self, session: ClientSession) -> None:
         self.session = session

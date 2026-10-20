@@ -6,7 +6,6 @@ from typing import Any
 import probatio as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     DateSelector,
     NumberSelector,
@@ -18,7 +17,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.util import dt as dt_util
 
-from .api import CannotConnect, OpcomClient
+from .api import CannotConnect, async_create_client
 from .const import DEFAULT_OPTIONS, DOMAIN, MARKET_TZ, NAME
 from .prices import (
     PriceError,
@@ -69,9 +68,10 @@ class OpcomConfigFlow(ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
         errors = {}
         if user_input is not None:
+            client = async_create_client(self.hass, auto_cleanup=False)
             try:
                 day = dt_util.utcnow().astimezone(MARKET_TZ).date()
-                text = await OpcomClient(async_get_clientsession(self.hass)).async_fetch(day)
+                text = await client.async_fetch(day)
                 parse_csv(text, day)
             except CannotConnect:
                 errors["base"] = "cannot_connect"
@@ -79,6 +79,8 @@ class OpcomConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_data"
             else:
                 return self.async_create_entry(title=NAME, data={})
+            finally:
+                client.session.detach()
         return self.async_show_form(step_id="user", data_schema=vol.Schema({}), errors=errors)
 
     @staticmethod

@@ -2,7 +2,7 @@
 
 Use Python 3.14.2+ and `uv sync --frozen`. Run Ruff and pytest as described in the README. All integration files must remain inside `custom_components/opcom_energy` so HACS can install them without repository-root dependencies.
 
-Keep unit conversion, timestamps and tariff arithmetic in `prices.py`; keep HTTP in `api.py`. Use Home Assistant's shared session, config-entry APIs and managed storage. Never block the event loop, disable TLS verification, add activation checks or send telemetry.
+Keep unit conversion, timestamps and tariff arithmetic in `prices.py`; keep HTTP in `api.py`. Use Home Assistant-managed HTTP sessions and shared connectors, config-entry APIs and managed storage. OPCOM CSV requests use a cookie-free session because the public endpoint rejects its own replayed cookies; preserve this isolation and normal TLS verification. Never block the event loop, disable TLS verification, add activation checks or send telemetry.
 
 New source formats need sanitized public fixtures. Test normal days, both DST transitions, missing/duplicate intervals, negative values and failed downloads. Tests must not access OPCOM or a live HA installation. Source smoke checks are separate opt-in commands.
 
