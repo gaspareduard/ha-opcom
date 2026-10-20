@@ -1,6 +1,6 @@
 # Dashboard „Prețuri OPCOM”
 
-[Documentația principală](../../README.md) · [Configurare YellowGrid](../../docs/tariffs.md)
+[Documentația principală](https://github.com/gaspareduard/ha-opcom/blob/main/README.md) · [Configurare YellowGrid](https://github.com/gaspareduard/ha-opcom/blob/main/docs/tariffs.md)
 
 Exemplu opțional, separat de instalarea integrării: trei prețuri curente și două grafice, **Astăzi** și **Mâine**. Importul este reprezentat prin bare turcoaz deschis, exportul prin bare turcoaz închis, iar OPCOM angro printr-o linie mov. Toate folosesc lei/kWh.
 

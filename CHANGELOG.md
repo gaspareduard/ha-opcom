@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.2.3
+
+- Publish the Romanian README in the release used by HACS, with absolute documentation and image links that also work in the HACS detail view.
 
 - Make Romanian the primary README and tariff-guide language; preserve English documentation and the existing Romanian README URL.
 - Document the complete YellowGrid setup, effective dates, final import cap, export floor, editable rates/VAT and unconfirmed distribution assumptions.

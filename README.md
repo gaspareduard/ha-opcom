@@ -2,11 +2,11 @@
 
 [![Validare](https://github.com/gaspareduard/ha-opcom/actions/workflows/validate.yaml/badge.svg)](https://github.com/gaspareduard/ha-opcom/actions/workflows/validate.yaml)
 [![Versiune](https://img.shields.io/github/v/release/gaspareduard/ha-opcom)](https://github.com/gaspareduard/ha-opcom/releases)
-[![Licență MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Licență MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/gaspareduard/ha-opcom/blob/main/LICENSE)
 
-<img src="custom_components/opcom_energy/brand/icon.png" alt="Grafic de prețuri și simbol electric OPCOM Energy" width="96">
+<img src="https://raw.githubusercontent.com/gaspareduard/ha-opcom/main/custom_components/opcom_energy/brand/icon.png" alt="Grafic de prețuri și simbol electric OPCOM Energy" width="96">
 
-Prețuri PZU din România, descărcate direct de la **OPCOM**, cu senzori pentru import/export, tarife editabile și planificarea celor mai ieftine intervale. Documentația principală este în română; [English documentation](README.en.md) este disponibilă separat.
+Prețuri PZU din România, descărcate direct de la **OPCOM**, cu senzori pentru import/export, tarife editabile și planificarea celor mai ieftine intervale. Documentația principală este în română; [English documentation](https://github.com/gaspareduard/ha-opcom/blob/main/README.en.md) este disponibilă separat.
 
 **Necesită Home Assistant 2026.10.0 sau mai nou.** Gratuită, cu licență MIT, fără cont, activare, telemetrie sau server de licențiere. Proiect independent, neafiliat OPCOM sau YellowGrid.
 
@@ -51,7 +51,7 @@ Toate versiunile încep la **miezul nopții în fusul orar HA**, de exemplu `Eur
 
 Versiunile salvate în v1.2.0 nu primesc automat plafonul final: editează versiunea, setează **Final import cap, including charges and VAT** la `1.31` și salvează. Actualizările păstrează setările existente.
 
-[Ghid complet: tarife, formule, TVA și date de intrare în vigoare](docs/tariffs.md).
+[Ghid complet: tarife, formule, TVA și date de intrare în vigoare](https://github.com/gaspareduard/ha-opcom/blob/main/docs/tariffs.md).
 
 ## Senzori disponibili
 
@@ -73,14 +73,14 @@ Numele entităților urmează limba HA. ID-urile efective pot diferi: alege-le d
 
 ## Dashboard: bare YellowGrid și linie OPCOM
 
-Exemplul [Prețuri OPCOM](examples/dashboard/README.md) afișează:
+Exemplul [Prețuri OPCOM](https://github.com/gaspareduard/ha-opcom/blob/main/examples/dashboard/README.md) afișează:
 
 - prețurile curente de import, export și OPCOM angro;
 - grafice separate **Astăzi** și **Mâine**, cu import/export ca bare și OPCOM ca linie;
 - orele locale, starea publicării și intervalele de 15 minute;
 - datele calculate de integrare, inclusiv versiunile tarifare viitoare, fără duplicarea formulelor în grafic.
 
-Dashboardul este opțional și se instalează separat, cu **ApexCharts Card**. Nu este creat automat de instalarea integrării prin HACS. [Fișiere și instrucțiuni](examples/dashboard/README.md).
+Dashboardul este opțional și se instalează separat, cu **ApexCharts Card**. Nu este creat automat de instalarea integrării prin HACS. [Fișiere și instrucțiuni](https://github.com/gaspareduard/ha-opcom/blob/main/examples/dashboard/README.md).
 
 ## Modul simplu
 
@@ -137,6 +137,6 @@ uv run pytest --cov=custom_components.opcom_energy --cov-report=term-missing
 PYTHONPATH=. uv run python scripts/check_live_source.py
 ```
 
-CI verifică testele, Ruff, Hassfest și HACS. Vezi [contribuții](CONTRIBUTING.md), [istoricul versiunilor](CHANGELOG.md) și [documentația completă în engleză](README.en.md). Pentru eliminare, șterge integrarea din Dispozitive și servicii, elimină descărcarea HACS și repornește HA.
+CI verifică testele, Ruff, Hassfest și HACS. Vezi [contribuții](https://github.com/gaspareduard/ha-opcom/blob/main/CONTRIBUTING.md), [istoricul versiunilor](https://github.com/gaspareduard/ha-opcom/blob/main/CHANGELOG.md) și [documentația completă în engleză](https://github.com/gaspareduard/ha-opcom/blob/main/README.en.md). Pentru eliminare, șterge integrarea din Dispozitive și servicii, elimină descărcarea HACS și repornește HA.
 
-Autor: **Eduard Gaspar** — [gaspareduard](https://github.com/gaspareduard). Sursa datelor: [OPCOM](https://www.opcom.ro); sursa modelului de ofertă: [YellowGrid](https://www.yellowgrid.ro/legislatie-si-contracte). Codul și grafica originală sunt publicate sub [licența MIT](LICENSE).
+Autor: **Eduard Gaspar** — [gaspareduard](https://github.com/gaspareduard). Sursa datelor: [OPCOM](https://www.opcom.ro); sursa modelului de ofertă: [YellowGrid](https://www.yellowgrid.ro/legislatie-si-contracte). Codul și grafica originală sunt publicate sub [licența MIT](https://github.com/gaspareduard/ha-opcom/blob/main/LICENSE).
