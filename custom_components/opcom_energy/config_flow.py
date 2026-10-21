@@ -164,7 +164,7 @@ class OpcomOptionsFlow(OptionsFlow):
                 {
                     vol.Required("effective_from"): DateSelector(),
                     vol.Required("template", default="yellowgrid_chart"): select(
-                        ["yellowgrid_chart", "empty", "invoice_2026_09"]
+                        ["yellowgrid_chart", "empty"]
                     ),
                 }
             ),

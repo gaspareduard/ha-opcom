@@ -29,7 +29,7 @@ Identificatorul integrării este `opcom_energy`. Poate coexista cu alte integră
 Începând cu v1.2.2, sunt disponibile modelul YellowGrid cu plafon și prag minim, precum și descărcări OPCOM fără reutilizarea cookie-urilor care pot provoca erori HTTP 403.
 
 1. Deschide **Configurează → Versiuni tarifare și componente → Adaugă versiune tarifară**.
-2. Alege explicit **data de început** și presetul **YellowGrid — estimare grafic 20 octombrie (editabil)**. În interfața engleză: **Tariff versions and components → Add tariff version → YellowGrid — 20 October chart estimate (editable)**.
+2. Alege explicit **data de început** și presetul **YellowGrid — exemplu editabil**. În interfața engleză: **Tariff versions and components → Add tariff version → YellowGrid — editable example**.
 3. Verifică parametrii de mai jos, apoi tarifele de rețea și TVA pentru fiecare componentă.
 4. Alege **Salvează versiunea**. Redeschide configurarea și selectează **Modul de calcul al importului → Componente**; în engleză, **Import pricing mode → Components**.
 5. Activează **Preț estimat export / Estimated export price** din lista entităților integrării: senzorul este dezactivat implicit.
@@ -45,7 +45,7 @@ Identificatorul integrării este `opcom_energy`. Poate coexista cu alte integră
 
 **Plafonul de 1,31 se aplică prețului final, nu prețului OPCOM angro.** Pragul de 0,50 este un minim de export; prețul poate fi mai mare. La setările inițiale, exportul peste prag este `0.75 × OPCOM + 0.125` lei/kWh.
 
-Presetul pentru grafic include o componentă **Distribuție Delgaz (estimare grafic)**, editabilă și neconfirmată pentru contractul utilizatorului. Un grafic plafonat nu identifică operatorul de distribuție. Presetul separat **factură septembrie 2026** păstrează ratele exemplului de factură. Verifică operatorul, tarifele și TVA aplicabile contractului; **TVA CfD rămâne marcat neverificat**.
+Presetul pentru grafic include o componentă **Distribuție Delgaz (estimare grafic)**, editabilă și neconfirmată pentru contractul utilizatorului. Un grafic plafonat nu identifică operatorul de distribuție. **Tarif personalizat** începe fără componente suplimentare; adaugă tarifele din propria factură. Exemplul de factură este păstrat în documentație, nu ca preset separat. Versiunile deja salvate rămân editabile și neschimbate. Verifică operatorul, tarifele și TVA aplicabile contractului; **TVA CfD rămâne marcat neverificat**.
 
 Toate versiunile încep la **miezul nopții în fusul orar HA**, de exemplu `Europe/Bucharest`. Intervalele fără o versiune aplicabilă au preț estimat indisponibil. Datele OPCOM angro rămân separate. Pentru modificări viitoare, adaugă o versiune cu data nouă, păstrând perioadele anterioare.
 

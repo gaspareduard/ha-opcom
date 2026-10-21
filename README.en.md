@@ -70,7 +70,7 @@ Negative market prices remain negative. A negative spot price does not necessari
 Simple mode remains the default and preserves all existing settings and results. **Components** is a separate opt-in import-pricing mode with independent before-VAT energy settings; existing simple-mode multiplier/adder values are never copied into it.
 
 1. Open **Configure → Tariff versions and components → Add tariff version**.
-2. Choose an **effective start date** and either **Empty** or **September 2026 invoice (editable)** as starting values.
+2. Choose an **effective start date** and **YellowGrid — editable example** or **Custom tariff** as starting values.
 3. Set the before-VAT energy multiplier, energy adder and energy VAT percentage. Defaults are `1`, `0`, and `21%`.
 4. Edit/add/remove components as needed, then choose **Save tariff**. Amounts are RON/kWh **before VAT**; each component has its own VAT percentage, enabled flag and VAT-verification flag.
 5. Open Configure again and select **Import pricing mode → Components**.
@@ -84,7 +84,7 @@ estimated import total = base energy + additional charges + VAT
 
 A version starts at **midnight in your HA timezone**. Each price interval uses the version active at its start, including published future intervals. A version continues until the next version begins. Add future versions to schedule changes without replacing earlier settings. Without a covering version, the import total and threshold signal are unavailable. Raw OPCOM stays available; export also requires tariff coverage when YellowGrid versions are configured. Import planning cannot bridge uncovered intervals.
 
-The invoice starting values total **0.4648832 RON/kWh before VAT**. They are an editable September 2026 example, not a universal or automatically updated YellowGrid tariff. VAT starts at an editable 21%; **CfD VAT is marked unverified**. A rounded zero VAT amount on an invoice does not prove exemption. Check the rules applicable to your contract. The optional YellowGrid preset supports an editable import active-energy cap, final import ceiling, export floor and supplier commission; these remain estimates based on your configured contract.
+The documented invoice example totals **0.4648832 RON/kWh before VAT**. These are September 2026 reference rates in the documentation, not a universal or automatically updated YellowGrid tariff. VAT starts at an editable 21%; **CfD VAT is marked unverified**. A rounded zero VAT amount on an invoice does not prove exemption. Check the rules applicable to your contract. The optional YellowGrid preset supports an editable import active-energy cap, final import ceiling, export floor and supplier commission; these remain estimates based on your configured contract.
 
 Three additional sensors expose the current base energy before VAT, additional charges before VAT and VAT amount. The existing estimated import sensor exposes the total, selected effective date, named component details and unverified VAT assumptions in its attributes. The `get_prices` action includes the same breakdown for each component-mode import interval. See [the tariff guide](docs/tariffs.en.md) for configuration, examples and missing-coverage behavior.
 
@@ -160,8 +160,8 @@ Optional YellowGrid pricing (v1.2): the [editable chart-estimate preset](docs/ta
 
 ## YellowGrid setup (v1.2.2+)
 
-Create a dated **YellowGrid — 20 October chart estimate (editable)** tariff version and save it, then enable **Components** pricing. Default parameters are final import cap **1.31 RON/kWh including charges and VAT**, import active-energy cap **0.55 before VAT**, export floor **0.50**, commission **25%**, multiplier **1**, adder **0**, and editable energy VAT **21%**. Enable the export-price entity explicitly. Stored v1.2.0 versions require editing and saving the final cap field.
+Create a dated **YellowGrid — editable example** tariff version and save it, then enable **Components** pricing. Default parameters are final import cap **1.31 RON/kWh including charges and VAT**, import active-energy cap **0.55 before VAT**, export floor **0.50**, commission **25%**, multiplier **1**, adder **0**, and editable energy VAT **21%**. Enable the export-price entity explicitly. Stored v1.2.0 versions require editing and saving the final cap field.
 
-The chart preset uses an unconfirmed Delgaz distribution example; the separate invoice preset retains invoice rates. A capped chart cannot identify your distribution operator. Check your own contract and CfD VAT treatment. [Complete tariff guide](docs/tariffs.en.md).
+The YellowGrid example uses an unconfirmed Delgaz distribution example; the documentation retains the original invoice rates as a reference. A capped chart cannot identify your distribution operator. Check your own contract and CfD VAT treatment. [Complete tariff guide](docs/tariffs.en.md).
 
 The optional [Romanian dashboard example](examples/dashboard/README.md) shows import/export bars and raw OPCOM as a line for today and tomorrow. It uses the backend schedule actions, preserving effective-dated tariffs. ApexCharts Card and a separately registered JavaScript resource are required; HACS integration installation does not create this dashboard automatically.

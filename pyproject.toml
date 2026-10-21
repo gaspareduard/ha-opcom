@@ -1,6 +1,6 @@
 [project]
 name = "ha-opcom-energy"
-version = "1.2.3"
+version = "1.2.4"
 description = "Direct Romanian OPCOM day-ahead prices for Home Assistant"
 requires-python = ">=3.14.2"
 license = "MIT"

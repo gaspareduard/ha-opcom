@@ -56,10 +56,10 @@
       },
       "add_tariff": {
         "title": "Adaugă versiune tarifară",
-        "description": "Presetul YellowGrid reproduce estimativ graficul din 20 octombrie: plafon import 0,55, prag export 0,50, comision 25% și distribuție Delgaz 0,38791 RON/kWh. Distribuția este dedusă din grafic, nu confirmată pentru contractul dvs. Alegeți separat factura pentru tarifele din factură. Verificați TVA CfD. Plafonul final de import confirmat de utilizator este 1,31 RON/kWh. Graficul plafonat nu confirmă operatorul de distribuție.",
+        "description": "Alegeți exemplul YellowGrid sau un tarif personalizat fără componente suplimentare. Exemplul folosește un plafon final de import de 1,31 lei/kWh cu tarife și TVA incluse, un prag minim de export de 0,50 lei/kWh și comision de 25%. Tariful de distribuție Delgaz inclus este orientativ; verificați operatorul, tarifele și TVA din contractul dvs., inclusiv TVA CfD. Data aleasă stabilește începutul noii versiuni. Versiunile deja salvate nu se modifică.",
         "data": {
           "effective_from": "Data de început",
-          "template": "Valori inițiale"
+          "template": "Configurație inițială"
         }
       },
       "edit_tariff": {
@@ -245,9 +245,8 @@
       "options": {
         "simple": "Simplu",
         "components": "Componente",
-        "empty": "Gol (fără componente)",
-        "invoice_2026_09": "Factură septembrie 2026 (editabilă)",
-        "yellowgrid_chart": "YellowGrid — estimare grafic 20 octombrie (editabil)"
+        "empty": "Tarif personalizat",
+        "yellowgrid_chart": "YellowGrid — exemplu editabil"
       }
     }
   }

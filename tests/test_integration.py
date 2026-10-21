@@ -374,14 +374,21 @@ async def submit(hass, result, data):
     return await hass.config_entries.options.async_configure(result["flow_id"], data)
 
 
-async def test_invoice_components_ui_and_mode_switch_preserve_simple(hass, fetch):
-    entry = await setup(hass, {"import_multiplier": 1.21, "import_adder": 0.56})
+async def test_saved_invoice_components_remain_editable_and_preserve_simple(hass, fetch):
+    from custom_components.opcom_energy.prices import invoice_tariff
+
+    entry = await setup(
+        hass,
+        {
+            "import_multiplier": 1.21,
+            "import_adder": 0.56,
+            "tariff_versions": [invoice_tariff("2026-09-01")],
+        },
+    )
     original = find(hass, "estimated_import_price").state
     result = await options_step(hass, entry, "tariffs")
-    result = await submit(hass, result, {"next_step_id": "add_tariff"})
-    result = await submit(
-        hass, result, {"effective_from": "2026-09-01", "template": "invoice_2026_09"}
-    )
+    result = await submit(hass, result, {"next_step_id": "edit_tariff"})
+    result = await submit(hass, result, {"effective_from": "2026-09-01"})
     assert result["step_id"] == "version"
     result = await submit(
         hass,
@@ -636,6 +643,8 @@ async def test_yellowgrid_ui_sensors_and_actions(hass, fetch):
     result = await submit(hass, result, {"next_step_id": "add_tariff"})
     template_key = next(k for k in result["data_schema"].schema if str(k) == "template")
     assert template_key.default() == "yellowgrid_chart"
+    selector = result["data_schema"].schema[template_key]
+    assert selector.config["options"] == ["yellowgrid_chart", "empty"]
     result = await submit(
         hass, result, {"effective_from": "2026-09-01", "template": "yellowgrid_chart"}
     )
@@ -694,3 +703,20 @@ async def test_yellowgrid_ui_sensors_and_actions(hass, fetch):
                 assert row["price"] == pytest.approx(
                     max(0.5, 0.75 * float(source.price) / 1000 + 0.125)
                 )
+
+
+@pytest.mark.parametrize("preset", ["invoice", "yellowgrid"])
+async def test_public_preset_changes_preserve_saved_options_on_reload(hass, fetch, preset):
+    from copy import deepcopy
+
+    from custom_components.opcom_energy.prices import invoice_tariff, yellowgrid_tariff
+
+    tariff = (yellowgrid_tariff if preset == "yellowgrid" else invoice_tariff)("2026-09-01")
+    tariff["components"][0]["rate"] = 0.042
+    entry = await setup(hass, {"pricing_mode": "components", "tariff_versions": [tariff]})
+    before = deepcopy(dict(entry.options))
+    price = find(hass, "estimated_import_price").state
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert dict(entry.options) == before
+    assert find(hass, "estimated_import_price").state == price

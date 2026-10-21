@@ -56,10 +56,10 @@
       },
       "add_tariff": {
         "title": "Add tariff version",
-        "description": "The YellowGrid chart estimate uses import cap 0.55, export floor 0.50, commission 25% and Delgaz distribution 0.38791 RON/kWh. Distribution is inferred from the chart, not confirmed for your contract. Choose the invoice preset separately for invoice rates. Verify CfD VAT. The user-confirmed final import cap is 1.31 RON/kWh. The capped chart does not establish the distribution operator.",
+        "description": "Choose the YellowGrid example or a custom tariff with no additional charge components. The example uses a final import cap of 1.31 RON/kWh including charges and VAT, an export floor of 0.50 RON/kWh and a 25% commission. Its Delgaz distribution rate is illustrative; verify your distribution operator, contract rates and VAT, including CfD VAT. The selected date determines when the new version starts. Existing saved versions are unchanged.",
         "data": {
           "effective_from": "Effective start date",
-          "template": "Starting values"
+          "template": "Starting configuration"
         }
       },
       "edit_tariff": {
@@ -245,9 +245,8 @@
       "options": {
         "simple": "Simple",
         "components": "Components",
-        "empty": "Empty (no components)",
-        "invoice_2026_09": "September 2026 invoice (editable)",
-        "yellowgrid_chart": "YellowGrid — 20 October chart estimate (editable)"
+        "empty": "Custom tariff",
+        "yellowgrid_chart": "YellowGrid — editable example"
       }
     }
   }

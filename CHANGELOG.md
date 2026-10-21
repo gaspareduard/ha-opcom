@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.4
+
+- Offer only YellowGrid — editable example and Custom tariff when adding a tariff version, with matching Romanian labels.
+- Replace personal invoice/date references in setup help with contract-specific guidance; keep the invoice rates as documentation examples.
+- Preserve all saved tariff versions, charges, VAT, caps, commission, pricing mode and entity IDs without migration.
+
 ## 1.2.3
 
 - Publish the Romanian README in the release used by HACS, with absolute documentation and image links that also work in the HACS detail view.

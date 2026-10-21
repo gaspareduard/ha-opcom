@@ -10,7 +10,7 @@ Adaugă și salvează versiunea prin **Configurează → Versiuni tarifare și c
 
 ## Presetul YellowGrid
 
-La adăugarea unei versiuni, alegerea inițială este **YellowGrid — estimare grafic 20 octombrie (editabil)**. Este necesară salvarea explicită a unei date și activarea modului Componente. Modurile goale și pe baza facturii rămân disponibile; versiunile existente nu sunt înlocuite automat.
+La adăugarea unei versiuni, alegerea inițială este **YellowGrid — exemplu editabil**. Este necesară salvarea explicită a unei date și activarea modului Componente. **Tarif personalizat** începe fără componente suplimentare. Exemplul de factură de mai jos este doar o referință documentară; versiunile existente nu sunt înlocuite automat.
 
 | Câmp | Valoare inițială |
 | --- | ---: |
@@ -46,7 +46,7 @@ Fiecare componentă are nume, rată înainte de TVA în lei/kWh, TVA procentual,
 
 Numele trebuie să fie distincte și necompletate cu spații goale. Sunt acceptate cel mult 100 de versiuni, fiecare cu maximum 50 de componente. Valorile trebuie să fie finite: TVA și multiplicatorii sunt între 0 și 100, ratele/adaosurile între -10000 și 10000, iar plafoanele și pragurile YellowGrid între 0 și 10000. Introdu `21` pentru TVA de 21%, nu `1.21`.
 
-Presetul pe baza facturii din septembrie 2026 conține nouă componente, în total **0,4648832 lei/kWh înainte de TVA**. Distribuția IT/MT/JT însumează **0,31739**. Presetul pentru grafic folosește în schimb o singură componentă **Distribuție Delgaz (estimare grafic)** de **0,38791**, iar totalul componentelor sale este **0,5354032**. Acestea sunt două configurații alternative, nu tarife care se adună între ele.
+Exemplul documentat de factură din septembrie 2026 conține nouă componente, în total **0,4648832 lei/kWh înainte de TVA**. Distribuția IT/MT/JT însumează **0,31739**. Presetul pentru grafic folosește în schimb o singură componentă **Distribuție Delgaz (estimare grafic)** de **0,38791**, iar totalul componentelor sale este **0,5354032**. Acestea sunt exemple alternative, nu tarife care se adună între ele. Pentru propriile componente, alege Tarif personalizat.
 
 Operatorul Delgaz este **neconfirmat pentru contract**. Un preț final plafonat nu permite deducerea operatorului sau a tuturor tarifelor subiacente. Alege ratele din contractul tău. Ambele exemple pornesc cu TVA de 21%; **TVA CfD este marcat neverificat**. O valoare rotunjită la zero pe factură nu dovedește o scutire. Nu sunt incluse facturi private, date de cont ori identificatori de contor.
 

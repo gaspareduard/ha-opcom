@@ -6,7 +6,7 @@ Version 1.1 adds an opt-in **Components** import-pricing mode. Existing installa
 
 ## Configure a version
 
-Open the integration's **Configure → Tariff versions and components → Add tariff version**. Choose an effective date. The **Empty** starting configuration contains no additional charges. The **September 2026 invoice (editable)** configuration contains the documented example network charges and levies; choosing it is explicit and never changes other users' settings automatically.
+Open the integration's **Configure → Tariff versions and components → Add tariff version**. Choose an effective date. The **Custom tariff** starting configuration contains no additional charges. Add your own network charges and levies to **Custom tariff**. The invoice rates below are documentation examples only. Existing saved tariff versions remain editable and unchanged.
 
 Set the base energy before VAT as `spot × multiplier + adder`. The new fields are independent of the original import multiplier/adder, which may already contain VAT and network fees. Defaults are multiplier 1, adder 0 and energy VAT 21%. VAT fields are percentages: enter 21, not 1.21.
 
@@ -51,7 +51,7 @@ These are marginal price estimates. Fixed subscriptions, meter-energy accounting
 
 ## YellowGrid chart estimate (v1.2)
 
-Adding a version now offers **YellowGrid — 20 October chart estimate (editable)** as the default starting choice. It still requires saving a dated version and explicitly enabling Components mode. Existing saved versions and Simple mode are unchanged. The invoice-only and empty presets remain available.
+Adding a version now offers **YellowGrid — editable example** as the default starting choice. It still requires saving a dated version and explicitly enabling Components mode. Existing saved versions and Simple mode are unchanged. The only other starting choice is **Custom tariff**, with no additional charge components. Existing invoice-based versions remain editable.
 
 The [supplier’s published offer](https://www.yellowgrid.ro/legislatie-si-contracte), “Ofertă de Agregare și Furnizare Preț Dinamic”, valid 1 September–30 November 2026, supplies these editable starting parameters: import active-energy cap **0.55 RON/kWh**, export floor **0.50 RON/kWh**, commission **25%**. With `s = raw OPCOM RON/kWh` and `c = commission / 100`:
 
@@ -68,7 +68,7 @@ For the 20 October 2026 chart, all 96 quarter-hours (00:00–23:45 Europe/Buchar
 
 Import appears flat around **1.31 RON/kWh**. The invoice charges total **0.4648832** before VAT; using the public 0.55 energy cap and 21% VAT gives **1.228008672**, which does **not** match that chart. The public offer’s Delgaz distribution rate **0.38791**, replacing the invoice’s combined IT/MT/JT **0.31739**, gives charges **0.5354032** and total **1.313337872**. All comparable OPCOM intervals exceed the cap, explaining the flat import bars.
 
-The original v1.2.0 chart estimate uses one explicitly named **Delgaz distribution (chart estimate)** component, instead of inventing a split across voltage levels. Other charges and VAT start from the invoice example. The supplier’s illustrative table independently gives the same Delgaz total. This is an uncapped numerical comparison, **not confirmation that Delgaz is your contracted operator**: your invoice supports a different distribution rate. Check your account’s selected tariff/region or contract before treating the chart preset as a billing estimate. To use your invoice distribution instead, choose the invoice preset, or replace this distribution component with your applicable rates. Every parameter remains editable; CfD VAT stays marked unverified.
+The original v1.2.0 chart estimate uses one explicitly named **Delgaz distribution (chart estimate)** component, instead of inventing a split across voltage levels. Other charges and VAT start from the invoice example. The supplier’s illustrative table independently gives the same Delgaz total. This is an uncapped numerical comparison, **not confirmation that Delgaz is your contracted operator**: your invoice supports a different distribution rate. Check your account’s selected tariff/region or contract before treating the chart preset as a billing estimate. To use your invoice distribution instead, choose Custom tariff and enter your charges, or replace this distribution component with your applicable rates. Every parameter remains editable; CfD VAT stays marked unverified.
 
 
 ### Confirmed final import ceiling (v1.2.1)
