@@ -720,3 +720,57 @@ async def test_public_preset_changes_preserve_saved_options_on_reload(hass, fetc
     await hass.async_block_till_done()
     assert dict(entry.options) == before
     assert find(hass, "estimated_import_price").state == price
+
+
+async def test_callbacks_reuse_ha_timezone_without_zoneinfo_construction(
+    hass, fetch, freezer, csv_text
+):
+    """Callbacks and actions must not resolve a zone name on the event loop."""
+
+    async def load(day):
+        if day == date(2026, 10, 19):
+            return csv_text("2026-10-20").replace("20/10/2026", "19/10/2026")
+        return csv_text(day.isoformat())
+
+    fetch.side_effect = load
+    entry = await setup(hass)
+    coordinator = entry.runtime_data
+    for zone in ("Europe/Berlin", "Europe/Bucharest"):
+        await hass.config.async_set_time_zone(zone)
+        expected_tz = dt_util.get_default_time_zone()
+        with patch(
+            "custom_components.opcom_energy.coordinator.ZoneInfo",
+            side_effect=AssertionError("Timezone construction may read disk on the event loop"),
+            create=True,
+        ):
+            assert coordinator.local_tz is expected_tz
+            assert coordinator.required_days(dt_util.utcnow())
+            await coordinator.async_refresh()
+            freezer.tick(timedelta(minutes=15))
+            async_fire_time_changed(hass, dt_util.utcnow())
+            await hass.async_block_till_done()
+            assert find(hass, "spot_price").state != STATE_UNAVAILABLE
+            assert find(hass, "cheap_now").state in ("on", "off")
+            response = await hass.services.async_call(
+                DOMAIN,
+                "get_prices",
+                {"date": "2026-10-20"},
+                blocking=True,
+                return_response=True,
+            )
+            assert response["timezone"] == zone
+
+
+async def test_device_version_matches_release_manifest(hass, fetch):
+    import json
+    from pathlib import Path
+
+    from homeassistant.helpers import device_registry as dr
+
+    entry = await setup(hass)
+    (device,) = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    manifest = json.loads(
+        (Path(__file__).parents[1] / "custom_components" / DOMAIN / "manifest.json").read_text()
+    )
+    assert device.sw_version == manifest["version"]
+    assert entry.runtime_data is not None

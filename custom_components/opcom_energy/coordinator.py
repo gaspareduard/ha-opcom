@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, date, datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import UTC, date, datetime, timedelta, tzinfo
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
@@ -54,9 +53,9 @@ class OpcomCoordinator(DataUpdateCoordinator[tuple[PriceSlot, ...]]):
         self.source_available = False
 
     @property
-    def local_tz(self) -> ZoneInfo:
-        """Use the HA timezone for local-day summaries."""
-        return ZoneInfo(self.hass.config.time_zone)
+    def local_tz(self) -> tzinfo:
+        """Reuse HA's resolved timezone without disk I/O in async callbacks."""
+        return dt_util.get_default_time_zone()
 
     async def async_load_cache(self) -> None:
         """Treat stored data as untrusted; revalidate CSV before exposing prices."""

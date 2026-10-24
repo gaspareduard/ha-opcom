@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.5
+
+- Reuse Home Assistant's already resolved default timezone in coordinator, entity callbacks and response actions, avoiding dynamic ZoneInfo construction and possible disk I/O on the event loop. Follow HA timezone changes without reloading the integration.
+- Correct the device software-version label and add a regression check against the release manifest.
+- Preserve all tariff settings, price formulas, entity IDs and dashboard configuration.
+
 ## 1.2.4
 
 - Offer only YellowGrid — editable example and Custom tariff when adding a tariff version, with matching Romanian labels.
