@@ -14,13 +14,14 @@ Romanian day-ahead electricity prices, fetched directly from **OPCOM PZU**, with
 
 [![Open your Home Assistant instance and open this repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=gaspareduard&repository=ha-opcom&category=integration)
 
-1. Open **HACS → ⋮ → Custom repositories**.
-2. Add `https://github.com/gaspareduard/ha-opcom`, category **Integration**.
-3. Find **OPCOM Energy**, download it, then restart Home Assistant.
-4. Open **Settings → Devices & services → Add integration → OPCOM Energy**.
-5. Open **Configure → Simple settings and planning** for the original formulas. For optional invoice-style pricing, use **Tariff versions and components**, then **Import pricing mode → Components**.
+OPCOM Energy is listed in the **default HACS directory**, so no custom repository is needed.
 
-Anyone can install through this public custom repository. Default-directory listing is a separate HACS review process; the custom-repository link works independently of that review.
+1. Open **HACS** and search for **OPCOM Energy** (or use the button above).
+2. Download it, then restart Home Assistant.
+3. Open **Settings → Devices & services → Add integration → OPCOM Energy**.
+4. Open **Configure → Simple settings and planning** for the original formulas. For optional invoice-style pricing, use **Tariff versions and components**, then **Import pricing mode → Components**.
+
+If you previously added `https://github.com/gaspareduard/ha-opcom` as a custom repository, you can remove it under **HACS → ⋮ → Custom repositories**; the installed integration and its updates are unaffected.
 
 For manual installation, copy `custom_components/opcom_energy` into your HA `config/custom_components/` directory, restart, and add the integration through the UI. No YAML configuration is required. The domain `opcom_energy` allows coexistence with other OPCOM integrations; it does not migrate their entities or settings.
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.6
+
+- Update the Romanian and English install instructions: OPCOM Energy is now in the default HACS directory, so a custom repository is no longer needed. Explain that an existing custom-repository entry can be removed safely.
+- No code, entity or configuration changes.
+
 ## 1.2.5
 
 - Reuse Home Assistant's already resolved default timezone in coordinator, entity callbacks and response actions, avoiding dynamic ZoneInfo construction and possible disk I/O on the event loop. Follow HA timezone changes without reloading the integration.

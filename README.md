@@ -14,13 +14,14 @@ Prețuri PZU din România, descărcate direct de la **OPCOM**, cu senzori pentru
 
 [![Deschide integrarea în HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=gaspareduard&repository=ha-opcom&category=integration)
 
-1. Deschide **HACS → ⋮ → Custom repositories**.
-2. Adaugă `https://github.com/gaspareduard/ha-opcom`, categoria **Integration**.
-3. Descarcă **OPCOM Energy** și repornește Home Assistant.
-4. Deschide **Setări → Dispozitive și servicii → Adaugă integrare → OPCOM Energy**.
-5. Configurează tariful prin **Configurează**. Într-o interfață HA în engleză, butoanele se numesc **Settings → Devices & services → Configure**.
+Integrarea este inclusă în **catalogul implicit HACS**: nu mai este nevoie de un repository personalizat.
 
-Repository-ul personalizat HACS este public și poate fi folosit imediat. Includerea în catalogul implicit HACS este un proces separat. Pentru instalare manuală, copiază `custom_components/opcom_energy` în directorul `custom_components` al HA, apoi repornește și adaugă integrarea din interfață.
+1. Deschide **HACS** și caută **OPCOM Energy** (sau folosește butonul de mai sus).
+2. Alege **Descarcă** și repornește Home Assistant.
+3. Deschide **Setări → Dispozitive și servicii → Adaugă integrare → OPCOM Energy**.
+4. Configurează tariful prin **Configurează**. Într-o interfață HA în engleză, butoanele se numesc **Settings → Devices & services → Configure**.
+
+Dacă ai adăugat anterior `https://github.com/gaspareduard/ha-opcom` ca repository personalizat, poți să-l elimini din **HACS → ⋮ → Custom repositories**; integrarea instalată și actualizările rămân neschimbate. Pentru instalare manuală, copiază `custom_components/opcom_energy` în directorul `custom_components` al HA, apoi repornește și adaugă integrarea din interfață.
 
 Identificatorul integrării este `opcom_energy`. Poate coexista cu alte integrări OPCOM, fără migrarea automată a entităților lor.
 
