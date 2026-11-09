@@ -4,7 +4,7 @@
 [![Versiune](https://img.shields.io/github/v/release/gaspareduard/ha-opcom)](https://github.com/gaspareduard/ha-opcom/releases)
 [![Licență MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/gaspareduard/ha-opcom/blob/main/LICENSE)
 
-<img src="https://raw.githubusercontent.com/gaspareduard/ha-opcom/main/custom_components/opcom_energy/brand/icon.png" alt="Grafic de prețuri și simbol electric OPCOM Energy" width="96">
+<img src="https://raw.githubusercontent.com/gaspareduard/ha-opcom/main/custom_components/opcom_energy/brand/icon.png" alt="Pictograma OPCOM Energy Blue Hour: fulger alb și cadran cu accent piersică pe fundal albastru cobalt" width="96">
 
 Prețuri PZU din România, descărcate direct de la **OPCOM**, cu senzori pentru import/export, tarife editabile și planificarea celor mai ieftine intervale. Documentația principală este în română; [English documentation](https://github.com/gaspareduard/ha-opcom/blob/main/README.en.md) este disponibilă separat.
 

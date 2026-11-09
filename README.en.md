@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/gaspareduard/ha-opcom)](https://github.com/gaspareduard/ha-opcom/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-<img src="custom_components/opcom_energy/brand/icon.png" alt="OPCOM Energy chart and lightning icon" width="96">
+<img src="custom_components/opcom_energy/brand/icon.png" alt="OPCOM Energy Blue Hour icon: white lightning and a peach-accented dial on cobalt blue" width="96">
 
 Romanian day-ahead electricity prices, fetched directly from **OPCOM PZU**, with price sensors, local-day schedules and cheapest-window planning. Free to use and modify. No account, activation key, telemetry or license server.
 
@@ -155,7 +155,7 @@ CI runs Home Assistant integration tests, Ruff, Hassfest and the HACS validator.
 
 Data source: [OPCOM](https://www.opcom.ro), public PZU CSV exports at `/rapoarte-pzu-raportPIP-export-csv/{day}/{month}/{year}/ro?resolution=PT15M`. Market-time reference: [OPCOM operational procedure](https://www.opcom.ro/uploads/doc/PZU/PO%20PZU%2015%27.pdf). Source format and availability are controlled by OPCOM. This project makes no uptime guarantee.
 
-Original implementation by **Eduard Gaspar** ([gaspareduard](https://github.com/gaspareduard)). Software: [MIT license](LICENSE); OPCOM data and marks remain attributable to their source. The project icon is an original chart/lightning design, not an OPCOM trademark.
+Original implementation by **Eduard Gaspar** ([gaspareduard](https://github.com/gaspareduard)). Software: [MIT license](LICENSE); OPCOM data and marks remain attributable to their source. The project icon is the community project's Blue Hour lightning/dial design, not an OPCOM trademark.
 
 Optional YellowGrid pricing (v1.2): the [editable chart-estimate preset](docs/tariffs.en.md#yellowgrid-chart-estimate-v12) includes a capped import energy price and a minimum export price after commission. Its editable Delgaz distribution example is unconfirmed for your contract; a capped chart cannot establish the applicable operator. The separate invoice preset retains invoice distribution rates. Existing settings and raw OPCOM prices are preserved.
 
