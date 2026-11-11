@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.7
+
+- Replace the integration icon with the new Blue Hour artwork in `custom_components/opcom_energy/brand/` (`icon.png`, `icon@2x.png`), so HACS installs show it after updating. Restart Home Assistant and hard-refresh the browser if the old icon is still cached.
+- No code, entity or configuration changes.
+
 ## 1.2.6
 
 - Update the Romanian and English install instructions: OPCOM Energy is now in the default HACS directory, so a custom repository is no longer needed. Explain that an existing custom-repository entry can be removed safely.
